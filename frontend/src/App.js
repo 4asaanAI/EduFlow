@@ -5,7 +5,7 @@ import ChatMessage from '@/components/ChatMessage';
 import InputBar from '@/components/InputBar';
 import { Toaster, toast } from 'sonner';
 import { tools, conversations, defaultHistory, keywordMap, genericResponses } from '@/data/mockData';
-import { Menu } from 'lucide-react';
+import { Menu, Sun, Moon } from 'lucide-react';
 
 function App() {
   const [activeConvId, setActiveConvId] = useState('morning_briefing');
@@ -13,6 +13,7 @@ function App() {
   const [history, setHistory] = useState(defaultHistory);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [theme, setTheme] = useState('dark');
   const chatRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
@@ -62,7 +63,7 @@ function App() {
       messages: [
         {
           role: 'ai',
-          text: "Good morning, Akshat! How can I help you today? You can ask about school pulse, fees, staff attendance, analytics, or any other module. Use the tools panel on the left for quick access.",
+          text: "Good morning, Aman! How can I help you today? You can ask about school pulse, fees, staff attendance, analytics, or any other module. Use the tools panel on the left for quick access.",
         },
       ],
     };
@@ -140,8 +141,12 @@ function App() {
     });
   };
 
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   return (
-    <div className="ef-app" data-testid="eduflow-app">
+    <div className="ef-app" data-testid="eduflow-app" data-theme={theme}>
       <Sidebar
         tools={tools}
         history={history}
@@ -168,6 +173,14 @@ function App() {
             <span className="ef-role-dot" />
             Owner &mdash; Aman
           </div>
+          <button
+            className="ef-theme-toggle"
+            onClick={toggleTheme}
+            data-testid="theme-toggle-btn"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
         </div>
 
         {/* Chat Area */}
@@ -195,17 +208,21 @@ function App() {
         </div>
 
         {/* Input Bar */}
-        <InputBar onSend={handleSend} />
+        <InputBar onSend={handleSend} onToolSelect={handleToolClick} />
       </div>
 
       <Toaster
-        theme="dark"
+        theme={theme}
         position="bottom-right"
         toastOptions={{
-          style: {
+          style: theme === 'dark' ? {
             background: '#15151f',
             border: '1px solid rgba(255,255,255,0.09)',
             color: '#ededeb',
+          } : {
+            background: '#ffffff',
+            border: '1px solid rgba(0,0,0,0.1)',
+            color: '#1a1a1e',
           },
         }}
       />

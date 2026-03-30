@@ -560,6 +560,21 @@ export const keywordMap = {
   pulse: 'school_pulse', overview: 'school_pulse', status: 'school_pulse', school: 'school_pulse',
 };
 
+export const students = [
+  { name: 'Rahul Gupta', class: '10A' },
+  { name: 'Sneha Kumari', class: '8B' },
+  { name: 'Amit Singh', class: '9A' },
+  { name: 'Pooja Yadav', class: '7C' },
+  { name: 'Vikram Raj', class: '6B' },
+  { name: 'Arjun Patel', class: '10B' },
+  { name: 'Priya Sharma', class: '9B' },
+  { name: 'Neha Verma', class: '8A' },
+  { name: 'Rohan Mehta', class: '7A' },
+  { name: 'Ananya Joshi', class: '6A' },
+  { name: 'Karan Thakur', class: '10A' },
+  { name: 'Divya Nair', class: '9A' },
+];
+
 export const genericResponses = [
   "I'll look into that for you. Could you be more specific about which module you'd like me to pull up? You can try asking about fees, staff, analytics, alerts, finances, announcements, leaves, or admissions.",
   "I understand your query. Let me suggest: try using one of the tools on the left panel for detailed reports. You can ask about school pulse, fee collection, staff tracking, or any other module.",

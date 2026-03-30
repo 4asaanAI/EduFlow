@@ -527,6 +527,90 @@
   font-size: 10px;
 }
 
+/* ===== THEME TOGGLE ===== */
+.ef-theme-toggle {
+  display: flex;
+  width: 34px; height: 34px;
+  align-items: center; justify-content: center;
+  border: 1px solid var(--ef-border-h);
+  background: var(--bg-2);
+  color: var(--tx-2);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  margin-left: 8px;
+}
+.ef-theme-toggle:hover {
+  background: var(--bg-3);
+  color: var(--tx-1);
+}
+
+/* ===== SLASH / @ DROPDOWN ===== */
+.ef-dropdown-anchor {
+  position: relative;
+}
+.ef-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0; right: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--ef-border-h);
+  border-radius: var(--r);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 200;
+  padding: 4px;
+  animation: efDropIn 0.15s ease;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+[data-theme="light"] .ef-dropdown {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+.ef-dropdown-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px; font-weight: 700;
+  color: var(--tx-4);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 8px 10px 4px;
+}
+.ef-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.ef-dropdown-item:hover,
+.ef-dropdown-item.highlighted {
+  background: var(--bg-3);
+}
+.ef-dropdown-item .ef-tool-ico {
+  width: 28px; height: 28px;
+}
+.ef-dropdown-item-name {
+  font-size: 13px; font-weight: 500; color: var(--tx-1);
+}
+.ef-dropdown-item-desc {
+  font-size: 11px; color: var(--tx-3);
+}
+.ef-student-class {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--tx-3);
+  background: var(--bg-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+@keyframes efDropIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== TYPING INDICATOR ===== */
 .ef-typing {
   display: flex; gap: 4px; padding: 8px 0;
@@ -549,6 +633,30 @@
   0%, 60%, 100% { transform: translateY(0); }
   30% { transform: translateY(-4px); }
 }
+
+/* ===== LIGHT THEME ===== */
+[data-theme="light"] {
+  --bg-0: #ffffff;
+  --bg-1: #f5f5f7;
+  --bg-2: #eeeef0;
+  --bg-3: #e4e4e8;
+  --bg-4: #d1d1d6;
+  --tx-1: #1a1a1e;
+  --tx-2: #55555a;
+  --tx-3: #88888d;
+  --tx-4: #b0b0b5;
+  --ef-border: rgba(0, 0, 0, 0.07);
+  --ef-border-h: rgba(0, 0, 0, 0.12);
+}
+[data-theme="light"] .ef-msg.user .ef-bubble {
+  background: var(--blue);
+  color: #fff;
+}
+[data-theme="light"] .ef-avatar.ai-av { color: #fff; }
+[data-theme="light"] .ef-avatar.user-av { color: var(--orange); }
+[data-theme="light"] .ef-send-btn { color: #fff; }
+[data-theme="light"] .ef-sb-new { color: #fff; }
+[data-theme="light"] .ef-logo-icon svg { color: #fff; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
