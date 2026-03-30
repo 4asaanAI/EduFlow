@@ -1,0 +1,159 @@
+{
+  "theme_and_archetype": {
+    "domain": "Education Management & Analytics Dashboard",
+    "theme": "dark",
+    "archetype": "Archetype 4 (Swiss & High-Contrast - Dark Mode Variant)",
+    "rationale": "For an AI-powered school owner dashboard, we need authority, clarity, and function-first precision. The dark theme prevents eye strain during extended use, while high-contrast data visualization ensures critical metrics (alerts, finances) are immediately visible. The aesthetic is 'Control Center' rather than 'Consumer App'."
+  },
+  "typography": {
+    "rules": "Radical weight contrast. Do not use generic sans for headings. Use IBM Plex Sans for tabular data.",
+    "fonts": {
+      "heading": {
+        "family": "Manrope",
+        "weights": ["400", "700", "800"],
+        "usage": "H1, H2, prominent metric numbers"
+      },
+      "body": {
+        "family": "IBM Plex Sans",
+        "weights": ["400", "500", "600"],
+        "usage": "General text, paragraphs, labels"
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "weights": ["400", "500"],
+        "usage": "Financial figures, IDs, tabular data, code/query blocks"
+      }
+    },
+    "scale": {
+      "h1": "text-3xl sm:text-4xl tracking-tight font-extrabold",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-bold",
+      "h3": "text-xl font-semibold",
+      "h4": "text-sm tracking-[0.2em] uppercase font-bold text-zinc-400",
+      "body": "text-sm sm:text-base leading-relaxed text-zinc-300",
+      "small": "text-xs text-zinc-500"
+    }
+  },
+  "colors": {
+    "backgrounds": {
+      "app": "bg-zinc-950",
+      "panel": "bg-zinc-900",
+      "surface": "bg-zinc-900/50",
+      "glass": "backdrop-blur-xl bg-zinc-950/80"
+    },
+    "text": {
+      "primary": "text-zinc-50",
+      "secondary": "text-zinc-400",
+      "muted": "text-zinc-500",
+      "inverse": "text-zinc-950"
+    },
+    "borders": {
+      "default": "border-zinc-800",
+      "subtle": "border-zinc-800/50",
+      "focus": "ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-950"
+    },
+    "accents": {
+      "primary": {
+        "bg": "bg-blue-600",
+        "hover": "hover:bg-blue-500",
+        "text": "text-blue-400",
+        "border": "border-blue-500/30"
+      },
+      "success": {
+        "bg": "bg-emerald-500/10",
+        "text": "text-emerald-400",
+        "border": "border-emerald-500/20"
+      },
+      "alert": {
+        "bg": "bg-rose-500/10",
+        "text": "text-rose-400",
+        "border": "border-rose-500/20"
+      },
+      "warning": {
+        "bg": "bg-amber-500/10",
+        "text": "text-amber-400",
+        "border": "border-amber-500/20"
+      }
+    }
+  },
+  "layout_and_spacing": {
+    "structure": "Three-column grid layout mimicking a high-end command center.",
+    "columns": {
+      "column_1": "Primary Nav (Icons only) - W: 64px or 80px, fixed, border-r border-zinc-800.",
+      "column_2": "Sidebar (Tools + Chat History) - W: 280px or 320px, fixed, border-r border-zinc-800. Contains available tools panel at the top and chat history list below.",
+      "column_3": "Main Chat Area - Fluid width (flex-1). Contains AI chat stream, embedded dashboard widgets, and a sticky input bar at the bottom."
+    },
+    "spacing_scale": {
+      "widget_padding": "p-6",
+      "chat_message_gap": "gap-8",
+      "section_gap": "gap-12"
+    },
+    "grid_system": {
+      "bento_tools": "grid-cols-2 gap-2",
+      "data_cards": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+    }
+  },
+  "components": {
+    "sidebar": {
+      "style": "bg-zinc-950 border-r border-zinc-800 h-screen overflow-y-auto flex flex-col",
+      "tools_panel": "p-4 space-y-2 border-b border-zinc-800/50. Buttons should use surface styles (bg-zinc-900 hover:bg-zinc-800) with solid icons.",
+      "chat_history": "flex-1 overflow-y-auto p-2 space-y-1"
+    },
+    "chat_area": {
+      "container": "flex flex-col h-screen bg-[#0A0A0A]",
+      "message_list": "flex-1 overflow-y-auto p-4 sm:p-8 space-y-8",
+      "input_bar": "sticky bottom-0 p-4 border-t border-zinc-800 bg-zinc-950/80 backdrop-blur-xl"
+    },
+    "chat_messages": {
+      "ai_message": "flex gap-4 max-w-4xl. Avatar on left. Content uses typography rules. Data widgets (cards/tables) are embedded directly below text.",
+      "user_message": "flex justify-end gap-4 max-w-4xl ml-auto. Content is simple text in a subtle colored bubble (e.g., bg-zinc-800 or muted primary).",
+      "data_widget": "bg-zinc-900 border border-zinc-800 rounded-lg p-5 w-full mt-4 shadow-sm. Sharp or max 8px radius."
+    },
+    "data_visualization": {
+      "cards": "Use 'Control Room' tight gaps. Flat bg, 1px subtle border, NO heavy shadows. Use emerald/rose text for +/- trends.",
+      "tables": "Shadcn Table. Dense layout. Use JetBrains Mono for numeric columns.",
+      "charts": "Recharts. Grid lines should be very faint (border-zinc-800). Lines/Bars should use bright accents (Blue, Emerald) against dark bg."
+    },
+    "buttons": {
+      "primary": "bg-blue-600 hover:bg-blue-500 text-white rounded-md px-4 py-2 font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-950",
+      "secondary": "bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-md px-4 py-2 font-medium transition-colors",
+      "ghost": "hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 rounded-md px-3 py-1.5 transition-colors"
+    },
+    "input": {
+      "chat_input": "w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-zinc-500"
+    }
+  },
+  "motion_and_interactions": {
+    "hover_states": "All interactive elements MUST have a visible hover state (e.g., bg-zinc-900 -> bg-zinc-800, text-zinc-400 -> text-zinc-100).",
+    "focus_states": "High contrast focus rings required for accessibility.",
+    "entrance": "AI messages and nested data cards should use staggered fade-in + slight upward translation (translate-y-2 to 0, opacity 0 to 1).",
+    "typing_indicator": "Subtle pulse animation on 3 dots for AI thinking state."
+  },
+  "media_urls": {
+    "user_avatar": {
+      "url": "https://images.pexels.com/photos/4687549/pexels-photo-4687549.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Professional portrait of school principal/owner. Use for the user's avatar."
+    },
+    "ai_avatar": {
+      "url": "https://images.unsplash.com/photo-1764943630631-b63aadf86e19?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzY2hvb2wlMjBidWlsZGluZyUyMGV4dGVyaW9yfGVufDB8fHx8MTc3NDg4MTgyMXww&ixlib=rb-4.1.0&q=85",
+      "description": "Modern school building. Can be used as a header image for the 'School Pulse' or 'AI Health Report' summary card."
+    }
+  },
+  "icons": {
+    "library": "Phosphor Icons (@phosphor-icons/react)",
+    "rationale": "Perfect for dense dashboards, providing a technical yet refined look.",
+    "usage": "Use 'weight=\"duotone\"' for active sidebar items, 'weight=\"regular\"' for inactive. Use solid icons for action buttons."
+  },
+  "accessibility_and_testing": {
+    "testing_attributes": "Add data-testid to ALL interactive elements. e.g., data-testid='sidebar-tool-pulse', data-testid='chat-input', data-testid='send-message-btn'.",
+    "contrast": "Text must meet 4.5:1 minimum against zinc-900. Use text-zinc-50 for primary content, limit text-zinc-500 to non-essential labels."
+  },
+  "instructions_to_main_agent": [
+    "Install required dependencies: lucide-react (or phosphor), framer-motion, recharts.",
+    "Set up Tailwind dark mode exclusively (add 'dark' class to html/body or force dark theme in config).",
+    "Implement the 3-column layout: Nav (Icons), Sidebar (Tools + History), Main (Chat).",
+    "The chat interface should render custom React components (cards, tables) as 'messages' from the AI based on the mock data.",
+    "Make sure the 'available tools panel' is explicitly at the TOP of the left sidebar, with chat history below it.",
+    "Use standard Shadcn components for tables and cards, but strip heavy shadows and use flat borders as per E1 style.",
+    "Load static/mock data for modules like 'School Pulse', 'Fee Collection', 'Staff Tracker', etc., into the chat flow."
+  ]
+}
