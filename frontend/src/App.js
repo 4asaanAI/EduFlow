@@ -5,85 +5,49 @@ import ChatMessage from '@/components/ChatMessage';
 import InputBar from '@/components/InputBar';
 import ToolView from '@/components/ToolView';
 import { Toaster, toast } from 'sonner';
-import { tools, conversations, defaultHistory, keywordMap, genericResponses } from '@/data/mockData';
+import { tools, conversations, defaultHistory, keywordMap, toolFollowUps, toolIntros, paramKeywords, clarifyResponse } from '@/data/mockData';
 import { Menu, Sun, Moon, ArrowLeft } from 'lucide-react';
 
 function App() {
   const [activeConvId, setActiveConvId] = useState('morning_briefing');
   const [activeToolId, setActiveToolId] = useState(null);
-  const [viewMode, setViewMode] = useState('chat'); // 'chat' | 'tool'
+  const [viewMode, setViewMode] = useState('chat');
   const [allConvs, setAllConvs] = useState(conversations);
   const [history, setHistory] = useState(defaultHistory.map(h => ({ ...h, starred: false, pinned: false })));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [typing, setTyping] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [pendingTool, setPendingTool] = useState(null);
   const chatRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
-    if (chatRef.current) {
-      setTimeout(() => { chatRef.current.scrollTop = chatRef.current.scrollHeight; }, 50);
-    }
+    if (chatRef.current) setTimeout(() => { chatRef.current.scrollTop = chatRef.current.scrollHeight; }, 50);
   }, []);
-
   useEffect(() => { scrollToBottom(); }, [activeConvId, allConvs, scrollToBottom]);
 
   const activeMessages = allConvs[activeConvId]?.messages || [];
 
   const addToHistory = (id, title) => {
-    setHistory((prev) => {
-      if (prev.some((h) => h.id === id)) return prev;
-      return [{ id, title, time: 'Just now', starred: false, pinned: false }, ...prev];
-    });
+    setHistory(prev => { if (prev.some(h => h.id === id)) return prev; return [{ id, title, time: 'Just now', starred: false, pinned: false }, ...prev]; });
   };
 
-  const handleToolClick = (toolId) => {
-    setActiveToolId(toolId);
-    setViewMode('tool');
-    setSidebarOpen(false);
+  const addMessage = (convId, msg) => {
+    setAllConvs(prev => ({
+      ...prev, [convId]: { ...prev[convId], messages: [...(prev[convId]?.messages || []), msg] },
+    }));
   };
 
-  const handleConvClick = (convId) => {
-    setActiveConvId(convId);
-    setViewMode('chat');
-    setSidebarOpen(false);
-  };
-
-  const handleNewChat = () => {
-    const id = `chat_${Date.now()}`;
-    const newConv = {
-      id, title: 'New conversation', time: 'Just now',
-      messages: [{ role: 'ai', text: "Good morning, Aman! How can I help you today? You can ask about school pulse, fees, staff attendance, analytics, or any other module. Use the tools panel on the left for quick access." }],
-    };
-    setAllConvs((prev) => ({ ...prev, [id]: newConv }));
-    setActiveConvId(id);
-    setViewMode('chat');
-    addToHistory(id, 'New conversation');
-    setSidebarOpen(false);
-  };
-
-  const handleRenameChat = (id, newTitle) => {
-    setHistory((prev) => prev.map(h => h.id === id ? { ...h, title: newTitle } : h));
-  };
-
-  const handleToggleStar = (id) => {
-    setHistory((prev) => prev.map(h => h.id === id ? { ...h, starred: !h.starred } : h));
-  };
-
-  const handleTogglePin = (id) => {
-    setHistory((prev) => prev.map(h => h.id === id ? { ...h, pinned: !h.pinned } : h));
-  };
-
-  const handleDeleteChat = (id) => {
-    setHistory((prev) => prev.filter(h => h.id !== id));
-    setAllConvs((prev) => { const next = { ...prev }; delete next[id]; return next; });
-    if (activeConvId === id) {
-      setViewMode('tool');
-      setActiveToolId('school_pulse');
+  // --- Tool detection from /slash or keywords ---
+  const extractToolFromSlash = (text) => {
+    const match = text.match(/\/([\w-]+)/);
+    if (match) {
+      const slug = match[1].replace(/-/g, '_');
+      if (tools.some(t => t.id === slug)) return slug;
     }
-    toast.success('Chat deleted');
+    return null;
   };
 
-  const detectModule = (text) => {
+  const detectFromKeywords = (text) => {
     const lower = text.toLowerCase();
     for (const [keyword, moduleId] of Object.entries(keywordMap)) {
       if (lower.includes(keyword)) return moduleId;
@@ -91,56 +55,143 @@ function App() {
     return null;
   };
 
-  const handleSend = (text) => {
-    // If we're in tool view, switch to chat view first
-    if (viewMode === 'tool') {
-      handleNewChat();
-      // We need to add the message to the newly created chat
-      setTimeout(() => {
-        const userMsg = { role: 'user', text };
-        setAllConvs((prev) => {
-          const keys = Object.keys(prev);
-          const lastKey = keys[keys.length - 1];
-          return { ...prev, [lastKey]: { ...prev[lastKey], messages: [...prev[lastKey].messages, userMsg] } };
-        });
-      }, 100);
-      return;
+  const hasEnoughParams = (text, toolId) => {
+    const keywords = paramKeywords[toolId] || [];
+    if (keywords.length === 0) return true;
+    const lower = text.toLowerCase();
+    return keywords.some(k => lower.includes(k));
+  };
+
+  // --- Smart response engine ---
+  const processMessage = (text, convId) => {
+    // 1. If waiting for params from previous question, use the pending tool
+    if (pendingTool) {
+      const toolId = pendingTool;
+      setPendingTool(null);
+      return buildToolResponse(toolId, text);
     }
 
+    // 2. Check for explicit /tool reference
+    let toolId = extractToolFromSlash(text);
+    const cleanText = text.replace(/\/[\w-]+\s*/, '').trim();
+
+    // 3. If no explicit tool, auto-detect from keywords
+    if (!toolId) toolId = detectFromKeywords(text);
+
+    // 4. No tool found at all → ask for clarification
+    if (!toolId) {
+      return { role: 'ai', text: clarifyResponse };
+    }
+
+    // 5. Tool found — check if it needs follow-up params
+    const followUp = toolFollowUps[toolId];
+    if (followUp && !hasEnoughParams(cleanText, toolId)) {
+      setPendingTool(toolId);
+      const toolName = tools.find(t => t.id === toolId)?.name;
+      return {
+        role: 'ai',
+        text: `Using <b>${toolName}</b>. ${followUp.question}`,
+        tags: [{ name: toolName, icon: tools.find(t => t.id === toolId)?.icon }],
+        actions: followUp.options,
+        isQuickReply: true,
+      };
+    }
+
+    // 6. All good — generate tool response
+    return buildToolResponse(toolId, cleanText);
+  };
+
+  const buildToolResponse = (toolId, context) => {
+    const conv = conversations[toolId];
+    const aiMsg = conv?.messages.find(m => m.role === 'ai');
+    if (!aiMsg) return { role: 'ai', text: "I'll look into that for you." };
+
+    const toolName = tools.find(t => t.id === toolId)?.name;
+    const intro = toolIntros[toolId] || '';
+    return {
+      ...aiMsg,
+      role: 'ai',
+      text: `${intro}\n\n${aiMsg.text}`,
+      tags: [{ name: toolName, icon: tools.find(t => t.id === toolId)?.icon }],
+      isQuickReply: false,
+    };
+  };
+
+  // --- Handlers ---
+  const ensureChatMode = () => {
+    if (viewMode === 'chat') return activeConvId;
+    const id = `chat_${Date.now()}`;
+    const newConv = {
+      id, title: 'New conversation', time: 'Just now',
+      messages: [{ role: 'ai', text: "Hi Aman! What can I help you with?" }],
+    };
+    setAllConvs(prev => ({ ...prev, [id]: newConv }));
+    setActiveConvId(id);
+    setViewMode('chat');
+    addToHistory(id, 'New conversation');
+    return id;
+  };
+
+  const handleSend = (text) => {
+    const convId = ensureChatMode();
+
+    // Add user message
     const userMsg = { role: 'user', text };
-    setAllConvs((prev) => ({
-      ...prev, [activeConvId]: { ...prev[activeConvId], messages: [...(prev[activeConvId]?.messages || []), userMsg] },
-    }));
-    setHistory((prev) => prev.map((h) =>
-      h.id === activeConvId && h.title === 'New conversation'
+    addMessage(convId, userMsg);
+
+    // Update history title if new chat
+    setHistory(prev => prev.map(h =>
+      h.id === convId && h.title === 'New conversation'
         ? { ...h, title: text.slice(0, 40) + (text.length > 40 ? '...' : '') } : h
     ));
+
     setTyping(true);
     scrollToBottom();
 
     setTimeout(() => {
-      const moduleId = detectModule(text);
-      let aiResponse;
-      if (moduleId && conversations[moduleId]) {
-        const aiMsg = conversations[moduleId].messages.find((m) => m.role === 'ai');
-        aiResponse = aiMsg ? { ...aiMsg } : { role: 'ai', text: genericResponses[Math.floor(Math.random() * genericResponses.length)] };
-      } else {
-        aiResponse = { role: 'ai', text: genericResponses[Math.floor(Math.random() * genericResponses.length)] };
-      }
-      setAllConvs((prev) => ({
-        ...prev, [activeConvId]: { ...prev[activeConvId], messages: [...(prev[activeConvId]?.messages || []), aiResponse] },
-      }));
+      const response = processMessage(text, convId);
+      addMessage(convId, response);
       setTyping(false);
       scrollToBottom();
-    }, 1200);
+    }, 1000 + Math.random() * 500);
   };
 
-  const handleAction = (action) => {
-    toast.success(`${action}`, { description: 'Action completed successfully.', duration: 3000 });
+  const handleAction = (action, isQuickReply) => {
+    // If this is a quick-reply option (from a follow-up question), treat as user message
+    if (isQuickReply || pendingTool) {
+      handleSend(action);
+    } else {
+      toast.success(action, { description: 'Action completed.', duration: 3000 });
+    }
   };
 
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  const handleToolClick = (toolId) => { setActiveToolId(toolId); setViewMode('tool'); setSidebarOpen(false); };
+  const handleConvClick = (convId) => { setActiveConvId(convId); setViewMode('chat'); setSidebarOpen(false); };
 
+  const handleNewChat = () => {
+    const id = `chat_${Date.now()}`;
+    setAllConvs(prev => ({ ...prev, [id]: {
+      id, title: 'New conversation', time: 'Just now',
+      messages: [{ role: 'ai', text: "Hi Aman! How can I help you today? Describe what you need \u2014 I'll figure out which tool to use. Or type <b>/</b> to specify one." }],
+    }}));
+    setActiveConvId(id);
+    setViewMode('chat');
+    addToHistory(id, 'New conversation');
+    setSidebarOpen(false);
+    setPendingTool(null);
+  };
+
+  const handleRenameChat = (id, t) => { setHistory(prev => prev.map(h => h.id === id ? { ...h, title: t } : h)); };
+  const handleToggleStar = (id) => { setHistory(prev => prev.map(h => h.id === id ? { ...h, starred: !h.starred } : h)); };
+  const handleTogglePin = (id) => { setHistory(prev => prev.map(h => h.id === id ? { ...h, pinned: !h.pinned } : h)); };
+  const handleDeleteChat = (id) => {
+    setHistory(prev => prev.filter(h => h.id !== id));
+    setAllConvs(prev => { const n = { ...prev }; delete n[id]; return n; });
+    if (activeConvId === id) { setViewMode('tool'); setActiveToolId('school_pulse'); }
+    toast.success('Chat deleted');
+  };
+
+  const toggleTheme = () => setTheme(p => p === 'dark' ? 'light' : 'dark');
   const activeToolName = tools.find(t => t.id === activeToolId)?.name || '';
 
   return (
@@ -182,7 +233,7 @@ function App() {
                 </div>
               )}
             </div>
-            <InputBar onSend={handleSend} onToolSelect={handleToolClick} />
+            <InputBar onSend={handleSend} />
           </>
         )}
       </div>

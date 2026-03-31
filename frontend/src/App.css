@@ -451,6 +451,15 @@
   color: var(--tx-1);
   border-color: var(--blue);
 }
+.ef-action-btn.quick-reply-btn {
+  background: var(--blue-dim);
+  color: var(--blue);
+  border-color: rgba(91, 123, 245, 0.2);
+}
+.ef-action-btn.quick-reply-btn:hover {
+  background: var(--blue);
+  color: #fff;
+}
 
 /* ===== INPUT BAR ===== */
 .ef-input-wrap {

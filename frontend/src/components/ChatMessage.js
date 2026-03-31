@@ -172,12 +172,12 @@ export default function ChatMessage({ message, onAction, index }) {
 
         {/* Action buttons */}
         {message.actions && (
-          <div className="ef-actions">
+          <div className={`ef-actions ${message.isQuickReply ? 'quick-reply' : ''}`}>
             {message.actions.map((action, i) => (
               <button
                 key={i}
-                className="ef-action-btn"
-                onClick={() => onAction(action)}
+                className={`ef-action-btn ${message.isQuickReply ? 'quick-reply-btn' : ''}`}
+                onClick={() => onAction(action, message.isQuickReply)}
                 data-testid={`action-btn-${action.replace(/\s+/g, '-').toLowerCase().slice(0, 30)}`}
               >
                 {action}

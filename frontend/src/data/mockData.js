@@ -575,6 +575,42 @@ export const students = [
   { name: 'Divya Nair', class: '9A' },
 ];
 
+export const toolFollowUps = {
+  smart_analytics: {
+    question: "Which metric would you like to analyze?",
+    options: ["Enrollment Trends", "Attendance Patterns", "Academic Performance", "Fee Collection Trends"],
+  },
+  financial_reports: {
+    question: "Which type of report do you need?",
+    options: ["Profit & Loss Statement", "Income Summary", "Expense Breakdown", "Budget vs Actual"],
+  },
+  announcements: {
+    question: "Would you like to create a new announcement or view existing ones?",
+    options: ["Create new announcement", "View recent announcements", "View scheduled"],
+  },
+};
+
+export const toolIntros = {
+  school_pulse: "Pulling up today's school pulse.",
+  fee_collection: "Checking fee collection data.",
+  staff_tracker: "Pulling staff attendance records.",
+  smart_analytics: "Running analytics.",
+  smart_alerts: "Checking active alerts.",
+  financial_reports: "Generating financial summary.",
+  ai_health_report: "Computing health report.",
+  announcements: "Checking announcements.",
+  leave_manager: "Looking at leave requests.",
+  admission_funnel: "Pulling admission pipeline.",
+};
+
+export const paramKeywords = {
+  smart_analytics: ['enrollment', 'attendance', 'academic', 'performance', 'fee', 'staff', 'trend', 'score', 'grade'],
+  financial_reports: ['p&l', 'profit', 'income', 'expense', 'budget', 'loss', 'cash'],
+  announcements: ['create', 'new', 'send', 'view', 'recent', 'schedule', 'broadcast'],
+};
+
+export const clarifyResponse = "I'd be happy to help! Could you tell me more about what you need? I can assist with:\n\n\u2022 <b>School overview</b> \u2014 today's pulse and snapshot\n\u2022 <b>Fee collection</b> \u2014 defaulters, reminders, reports\n\u2022 <b>Staff tracking</b> \u2014 attendance, late arrivals, absences\n\u2022 <b>Analytics</b> \u2014 enrollment trends, performance data\n\u2022 <b>Alerts</b> \u2014 exceptions and urgent flags\n\u2022 <b>Finances</b> \u2014 income, expenses, budget reports\n\u2022 <b>Health report</b> \u2014 weekly school health score\n\u2022 <b>Announcements</b> \u2014 create or view broadcasts\n\u2022 <b>Leave management</b> \u2014 approve or reject requests\n\u2022 <b>Admissions</b> \u2014 enquiry pipeline and conversions\n\nDescribe what you need, or type <b>/</b> to pick a specific tool.";
+
 export const genericResponses = [
   "I'll look into that for you. Could you be more specific about which module you'd like me to pull up? You can try asking about fees, staff, analytics, alerts, finances, announcements, leaves, or admissions.",
   "I understand your query. Let me suggest: try using one of the tools on the left panel for detailed reports. You can ask about school pulse, fee collection, staff tracking, or any other module.",
