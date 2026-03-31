@@ -893,6 +893,19 @@ export const generalKnowledge = {
   },
 };
 
+export const staff = [
+  { name: 'Sunita Devi', role: 'Teacher (Hindi)' },
+  { name: 'Manoj Kumar', role: 'Teacher (Math)' },
+  { name: 'Priya Verma', role: 'Teacher (Science)' },
+  { name: 'Ankit Sharma', role: 'Lab Assistant' },
+  { name: 'Ramesh', role: 'Peon' },
+  { name: 'Deepa Sinha', role: 'Admin' },
+  { name: 'Ravi Tiwari', role: 'Teacher (PE)' },
+  { name: 'Meera Joshi', role: 'Teacher (Art)' },
+  { name: 'Rajesh Pandey', role: 'Accountant' },
+  { name: 'Riya Sharma', role: 'Teacher (English)' },
+];
+
 export const clarifyResponse = "I'd be happy to help! Could you tell me more about what you need? I can assist with:\n\n\u2022 <b>School overview</b> \u2014 today's pulse and snapshot\n\u2022 <b>Fee collection</b> \u2014 defaulters, reminders, reports\n\u2022 <b>Staff tracking</b> \u2014 attendance, late arrivals, absences\n\u2022 <b>Analytics</b> \u2014 enrollment trends, performance data\n\u2022 <b>Alerts</b> \u2014 exceptions and urgent flags\n\u2022 <b>Finances</b> \u2014 income, expenses, budget reports\n\u2022 <b>Health report</b> \u2014 weekly school health score\n\u2022 <b>Announcements</b> \u2014 create or view broadcasts\n\u2022 <b>Leave management</b> \u2014 approve or reject requests\n\u2022 <b>Admissions</b> \u2014 enquiry pipeline and conversions\n\u2022 <b>Students</b> \u2014 individual or class-wise info\n\u2022 <b>Exams</b> \u2014 schedules, results, report cards\n\u2022 <b>Timetable</b> \u2014 daily schedule, substitutions\n\u2022 <b>Events</b> \u2014 upcoming functions and calendar\n\u2022 <b>Transport</b> \u2014 bus routes, drivers, status\n\u2022 <b>Infrastructure</b> \u2014 facilities, labs, maintenance\n\u2022 <b>Parents</b> \u2014 PTM, feedback, complaints\n\u2022 <b>Policies</b> \u2014 school rules and compliance\n\u2022 <b>Homework</b> \u2014 assignments and submissions\n\nDescribe what you need, or type <b>/</b> to pick a specific tool";
 
 export const genericResponses = [

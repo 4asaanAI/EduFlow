@@ -1,12 +1,26 @@
 import { Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { tools } from '@/data/mockData';
 
 const iconMap = {
   Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus,
 };
 
+const toolIdSet = new Set(tools.map(t => t.id));
+
+function processToolLinks(html) {
+  if (!html) return html;
+  return html.replace(/\/([\w-]+)/g, (match, slug) => {
+    const toolId = slug.replace(/-/g, '_');
+    if (toolIdSet.has(toolId)) {
+      return `<span class="ef-tool-link" data-tool-id="${toolId}">${match}</span>`;
+    }
+    return match;
+  });
+}
+
 function RenderHTML({ html }) {
-  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+  return <span dangerouslySetInnerHTML={{ __html: processToolLinks(html) }} />;
 }
 
 function StatCard({ stat }) {
@@ -128,8 +142,17 @@ function DataWidget({ widget }) {
   );
 }
 
-export default function ChatMessage({ message, onAction, index }) {
+export default function ChatMessage({ message, onAction, onToolClick, index }) {
   const isUser = message.role === 'user';
+
+  const handleBubbleClick = (e) => {
+    const link = e.target.closest('.ef-tool-link');
+    if (link && onToolClick) {
+      e.preventDefault();
+      const toolId = link.dataset.toolId;
+      if (toolId) onToolClick(toolId);
+    }
+  };
 
   return (
     <div
@@ -140,7 +163,7 @@ export default function ChatMessage({ message, onAction, index }) {
       <div className={`ef-avatar ${isUser ? 'user-av' : 'ai-av'}`}>
         {isUser ? 'A' : 'E'}
       </div>
-      <div className="ef-bubble">
+      <div className="ef-bubble" onClick={handleBubbleClick}>
         {/* Main text with optional tags */}
         <p>
           <RenderHTML html={message.text} />

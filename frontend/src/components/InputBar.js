@@ -11,8 +11,8 @@ const colorMap = {
   purple: { bg: 'var(--purple-dim)', stroke: 'var(--purple)' },
 };
 
-export default function InputBar({ onSend }) {
-  const [text, setText] = useState('');
+export default function InputBar({ onSend, draft = '', convId, onDraftChange }) {
+  const [text, setText] = useState(draft);
   const [showTools, setShowTools] = useState(false);
   const [showStudents, setShowStudents] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -20,6 +20,12 @@ export default function InputBar({ onSend }) {
   const [slashStart, setSlashStart] = useState(-1);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  // Restore draft when conversation changes
+  useEffect(() => {
+    setText(draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convId]);
 
   const filteredTools = tools.filter(t =>
     t.name.toLowerCase().includes(filterText.toLowerCase()) ||
@@ -38,13 +44,13 @@ export default function InputBar({ onSend }) {
     const val = e.target.value;
     const cursor = e.target.selectionStart;
     setText(val);
+    onDraftChange?.(val);
 
     // Detect / — find the last / before cursor that isn't followed by a completed tool tag
     const beforeCursor = val.slice(0, cursor);
     const lastSlash = beforeCursor.lastIndexOf('/');
     if (lastSlash !== -1) {
       const afterSlash = beforeCursor.slice(lastSlash + 1);
-      // Only show dropdown if no space in the filter (still typing the tool name)
       if (!afterSlash.includes(' ')) {
         setShowTools(true);
         setShowStudents(false);
@@ -72,13 +78,13 @@ export default function InputBar({ onSend }) {
   };
 
   const handleToolClick = (tool) => {
-    // Insert /tool-slug into text at the slash position, replacing the partial text
     const before = text.slice(0, slashStart);
     const afterFilter = text.slice(slashStart).indexOf(' ');
     const after = afterFilter === -1 ? '' : text.slice(slashStart + afterFilter);
     const slug = tool.id.replace(/_/g, '-');
     const newText = `${before}/${slug} ${after}`.replace(/\s+/g, ' ');
     setText(newText);
+    onDraftChange?.(newText);
     setShowTools(false);
     setFilterText('');
     inputRef.current?.focus();
@@ -90,7 +96,9 @@ export default function InputBar({ onSend }) {
     const afterAt = text.slice(atIdx);
     const spaceIdx = afterAt.indexOf(' ');
     const after = spaceIdx === -1 ? '' : afterAt.slice(spaceIdx);
-    setText(`${before}@${student.name} ${after}`.replace(/\s+/g, ' '));
+    const newText = `${before}@${student.name} ${after}`.replace(/\s+/g, ' ');
+    setText(newText);
+    onDraftChange?.(newText);
     setShowStudents(false);
     setFilterText('');
     inputRef.current?.focus();
@@ -103,6 +111,7 @@ export default function InputBar({ onSend }) {
     setShowStudents(false);
     onSend(text.trim());
     setText('');
+    onDraftChange?.('');
   };
 
   const handleKeyDown = (e) => {
@@ -175,6 +184,9 @@ export default function InputBar({ onSend }) {
       </form>
       <div className="ef-input-hint">
         <kbd>/</kbd> insert tool &middot; <kbd>@</kbd> mention student &middot; or just describe what you need
+      </div>
+      <div className="ef-disclaimer" data-testid="ai-disclaimer">
+        EduFlow is AI and can make mistakes. Please double-check responses
       </div>
     </div>
   );

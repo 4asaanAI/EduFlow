@@ -21,6 +21,7 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [pendingTool, setPendingTool] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [drafts, setDrafts] = useState({});
   const chatRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
@@ -220,13 +221,16 @@ function App() {
 
   const handleSearchSendMessage = (text) => {
     setSearchOpen(false);
-    // Ensure we're in chat mode
     if (viewMode !== 'chat' || !allConvs[activeConvId]) {
       handleNewChat();
       setTimeout(() => handleSend(text), 200);
     } else {
       handleSend(text);
     }
+  };
+
+  const handleDraftChange = (text) => {
+    setDrafts(prev => ({ ...prev, [activeConvId]: text }));
   };
 
   return (
@@ -238,22 +242,29 @@ function App() {
 
       <div className="ef-main" data-testid="main-area">
         <div className="ef-top-bar" data-testid="top-bar">
-          <button className="ef-hamburger" onClick={() => setSidebarOpen(true)} data-testid="hamburger-btn"><Menu size={18} /></button>
-          {viewMode === 'tool' && (
-            <button className="ef-back-btn" onClick={() => { setViewMode('chat'); setActiveConvId(history[0]?.id || 'morning_briefing'); }} data-testid="back-to-chat-btn">
-              <ArrowLeft size={16} /> Chat
-            </button>
-          )}
-          <div className="ef-top-title">EduFlow AI</div>
-          <button className="ef-search-btn" onClick={() => setSearchOpen(true)} data-testid="search-btn">
-            <Search size={15} /> <span className="ef-search-btn-text">Search</span> <kbd className="ef-search-btn-kbd">\u2318K</kbd>
-          </button>
+          <div className="ef-top-bar-left">
+            <button className="ef-hamburger" onClick={() => setSidebarOpen(true)} data-testid="hamburger-btn"><Menu size={18} /></button>
+            {viewMode === 'tool' && (
+              <button className="ef-back-btn" onClick={() => { setViewMode('chat'); setActiveConvId(history[0]?.id || 'morning_briefing'); }} data-testid="back-to-chat-btn">
+                <ArrowLeft size={16} /> Chat
+              </button>
+            )}
+            <div className="ef-top-title">EduFlow AI</div>
+          </div>
           <div className="ef-top-spacer" />
-          <NotificationPanel />
-          <div className="ef-role-pill" data-testid="role-pill"><span className="ef-role-dot" /> Owner &mdash; Aman</div>
-          <button className="ef-theme-toggle" onClick={toggleTheme} data-testid="theme-toggle-btn" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
+          <div className="ef-search-trigger" onClick={() => setSearchOpen(true)} data-testid="search-trigger">
+            <Search size={15} />
+            <span className="ef-search-trigger-text">Search tools, people, or anything...</span>
+            <kbd className="ef-search-trigger-kbd">{'\u2318'}K</kbd>
+          </div>
+          <div className="ef-top-spacer" />
+          <div className="ef-top-bar-right">
+            <NotificationPanel />
+            <div className="ef-role-pill" data-testid="role-pill"><span className="ef-role-dot" /> Owner &mdash; Aman</div>
+            <button className="ef-theme-toggle" onClick={toggleTheme} data-testid="theme-toggle-btn" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          </div>
         </div>
 
         {viewMode === 'tool' ? (
@@ -264,7 +275,7 @@ function App() {
           <>
             <div className="ef-chat" ref={chatRef} data-testid="chat-area">
               {activeMessages.map((msg, i) => (
-                <ChatMessage key={`${activeConvId}-${i}`} message={msg} onAction={handleAction} index={i} />
+                <ChatMessage key={`${activeConvId}-${i}`} message={msg} onAction={handleAction} onToolClick={handleToolClick} index={i} />
               ))}
               {typing && (
                 <div className="ef-msg ai" data-testid="typing-indicator">
@@ -273,7 +284,7 @@ function App() {
                 </div>
               )}
             </div>
-            <InputBar onSend={handleSend} />
+            <InputBar onSend={handleSend} draft={drafts[activeConvId] || ''} convId={activeConvId} onDraftChange={handleDraftChange} />
           </>
         )}
       </div>

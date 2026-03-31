@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, X, Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus, MessageSquare, BookOpen, GraduationCap, Bus, Building, CalendarDays } from 'lucide-react';
-import { tools } from '@/data/mockData';
+import { Search, Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus, MessageSquare, BookOpen, GraduationCap, Bus, Building, CalendarDays, User } from 'lucide-react';
+import { tools, students, staff } from '@/data/mockData';
 
 const toolIconMap = { Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus };
 const colorMap = {
@@ -22,6 +22,11 @@ const generalTopics = [
   { name: 'Parent feedback', desc: 'Complaints, PTM, communication', icon: MessageSquare, category: 'info' },
   { name: 'School policies', desc: 'Rules, uniform, discipline', icon: FileText, category: 'info' },
   { name: 'Homework tracker', desc: 'Pending assignments and projects', icon: BookOpen, category: 'info' },
+];
+
+const allPeople = [
+  ...students.map(s => ({ name: s.name, detail: `Student \u2014 ${s.class}`, type: 'student' })),
+  ...staff.map(s => ({ name: s.name, detail: `Staff \u2014 ${s.role}`, type: 'staff' })),
 ];
 
 export default function SearchModal({ open, onClose, history, onToolClick, onConvClick, onSendMessage }) {
@@ -46,16 +51,22 @@ export default function SearchModal({ open, onClose, history, onToolClick, onCon
   }, [open, onClose]);
 
   const results = useMemo(() => {
-    if (!query.trim()) return { tools: tools, chats: history.slice(0, 5), topics: generalTopics.slice(0, 5) };
+    if (!query.trim()) return {
+      tools: tools,
+      chats: history.slice(0, 5),
+      people: allPeople.slice(0, 6),
+      topics: generalTopics.slice(0, 5),
+    };
     const q = query.toLowerCase();
     return {
       tools: tools.filter(t => t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q)),
       chats: history.filter(h => h.title.toLowerCase().includes(q)),
+      people: allPeople.filter(p => p.name.toLowerCase().includes(q) || p.detail.toLowerCase().includes(q)),
       topics: generalTopics.filter(t => t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q)),
     };
   }, [query, history]);
 
-  const hasResults = results.tools.length + results.chats.length + results.topics.length > 0;
+  const hasResults = results.tools.length + results.chats.length + results.people.length + results.topics.length > 0;
 
   if (!open) return null;
 
@@ -64,7 +75,7 @@ export default function SearchModal({ open, onClose, history, onToolClick, onCon
       <div className="ef-search-modal" ref={panelRef} data-testid="search-modal">
         <div className="ef-search-input-wrap">
           <Search size={16} />
-          <input ref={inputRef} type="text" placeholder="Search tools, chats, or ask about anything..." value={query}
+          <input ref={inputRef} type="text" placeholder="Search tools, people, chats, or ask about anything..." value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && query.trim()) { onSendMessage(query.trim()); onClose(); }
@@ -75,6 +86,28 @@ export default function SearchModal({ open, onClose, history, onToolClick, onCon
 
         <div className="ef-search-results">
           {!hasResults && <div className="ef-search-empty">No results \u2014 press Enter to ask in chat</div>}
+
+          {results.people.length > 0 && (
+            <div className="ef-search-section">
+              <div className="ef-search-section-label">People</div>
+              {results.people.map((person, i) => (
+                <div key={`${person.name}-${i}`} className="ef-search-item"
+                  onClick={() => { onSendMessage(`Tell me about ${person.name}`); onClose(); }}
+                  data-testid={`search-person-${person.name.replace(/\s+/g, '-').toLowerCase()}`}>
+                  <div className="ef-tool-ico" style={{
+                    background: person.type === 'student' ? 'var(--green-dim)' : 'var(--blue-dim)',
+                    width: 28, height: 28,
+                  }}>
+                    <User size={14} style={{ color: person.type === 'student' ? 'var(--green)' : 'var(--blue)' }} />
+                  </div>
+                  <div>
+                    <div className="ef-search-item-name">{person.name}</div>
+                    <div className="ef-search-item-desc">{person.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {results.tools.length > 0 && (
             <div className="ef-search-section">
