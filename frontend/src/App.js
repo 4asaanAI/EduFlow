@@ -104,7 +104,7 @@ function App() {
   const buildToolResponse = (toolId, context) => {
     const conv = conversations[toolId];
     const aiMsg = conv?.messages.find(m => m.role === 'ai');
-    if (!aiMsg) return { role: 'ai', text: "I'll look into that for you." };
+    if (!aiMsg) return { role: 'ai', text: "I'll look into that for you" };
 
     const toolName = tools.find(t => t.id === toolId)?.name;
     const intro = toolIntros[toolId] || '';
@@ -123,7 +123,7 @@ function App() {
     const id = `chat_${Date.now()}`;
     const newConv = {
       id, title: 'New conversation', time: 'Just now',
-      messages: [{ role: 'ai', text: "Hi Aman! What can I help you with?" }],
+      messages: [{ role: 'ai', text: "Hello Aman! What can I assist you with today?" }],
     };
     setAllConvs(prev => ({ ...prev, [id]: newConv }));
     setActiveConvId(id);
@@ -161,7 +161,7 @@ function App() {
     if (isQuickReply || pendingTool) {
       handleSend(action);
     } else {
-      toast.success(action, { description: 'Action completed.', duration: 3000 });
+      toast.success(action, { description: 'Action completed', duration: 3000 });
     }
   };
 
@@ -172,7 +172,7 @@ function App() {
     const id = `chat_${Date.now()}`;
     setAllConvs(prev => ({ ...prev, [id]: {
       id, title: 'New conversation', time: 'Just now',
-      messages: [{ role: 'ai', text: "Hi Aman! How can I help you today? Describe what you need \u2014 I'll figure out which tool to use. Or type <b>/</b> to specify one." }],
+      messages: [{ role: 'ai', text: "Hello Aman! What can I assist you with today?" }],
     }}));
     setActiveConvId(id);
     setViewMode('chat');

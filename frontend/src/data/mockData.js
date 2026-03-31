@@ -19,7 +19,7 @@ export const conversations = {
     messages: [
       {
         role: 'ai',
-        text: 'Good morning, Aman. Here\'s your <b>Monday briefing</b> for Shakti Shanti Academy.',
+        text: 'Good morning, Aman. Here\'s your <b>Monday briefing</b> for Shakti Shanti Academy',
         widgets: [
           {
             title: 'School pulse \u2014 Monday, 30 March 2026',
@@ -44,7 +44,7 @@ export const conversations = {
       },
       {
         role: 'user',
-        text: 'Show me which staff were late or absent this week. Also check who has pending leave requests.',
+        text: 'Show me which staff were late or absent this week. Also check who has pending leave requests',
       },
       {
         role: 'ai',
@@ -84,7 +84,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: '<b>Sunita Devi</b> missed 2 days without filing leave \u2014 this is the third time in 2 months. Manoj Kumar has been consistently late since mid-March.',
+        followUp: '<b>Sunita Devi</b> missed 2 days without filing leave \u2014 this is the third time in 2 months. Manoj Kumar has been consistently late since mid-March',
         actions: ["Approve Ramesh's leave", "Approve Deepa's leave", 'Send warning to Sunita', 'Full punctuality report'],
       },
       {
@@ -129,10 +129,10 @@ export const conversations = {
     title: "Today's school overview",
     time: '2 hrs ago',
     messages: [
-      { role: 'user', text: "Show me today's school overview." },
+      { role: 'user', text: "Show me today's school overview" },
       {
         role: 'ai',
-        text: "Here's your <b>daily school pulse</b> for Shakti Shanti Academy.",
+        text: "Here's your <b>daily school pulse</b> for Shakti Shanti Academy",
         widgets: [
           {
             title: 'School pulse \u2014 Monday, 30 March 2026',
@@ -154,7 +154,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: 'Overall a healthy day. Two items flagged: <b>Ramesh\'s leave request</b> (pending) and <b>Class 6B math scores</b> dropped 12% last unit test.',
+        followUp: 'Overall a healthy day. Two items flagged: <b>Ramesh\'s leave request</b> (pending) and <b>Class 6B math scores</b> dropped 12% last unit test',
         actions: ['Detailed attendance', 'Fee breakdown', 'Academic summary'],
       },
     ],
@@ -165,10 +165,10 @@ export const conversations = {
     title: 'Fee collection report for March',
     time: 'Yesterday',
     messages: [
-      { role: 'user', text: 'Show me the fee collection report for March.' },
+      { role: 'user', text: 'Show me the fee collection report for March' },
       {
         role: 'ai',
-        text: 'Here\'s the complete <b>fee collection summary</b> for March 2026.',
+        text: 'Here\'s the complete <b>fee collection summary</b> for March 2026',
         tags: [{ name: 'Fee collection summary', icon: 'IndianRupee' }],
         widgets: [
           {
@@ -207,7 +207,7 @@ export const conversations = {
       { role: 'user', text: 'Which staff were absent or late this week?' },
       {
         role: 'ai',
-        text: 'Here\'s the <b>staff attendance report</b> for this week.',
+        text: 'Here\'s the <b>staff attendance report</b> for this week',
         tags: [{ name: 'Staff attendance tracker', icon: 'Users' }],
         widgets: [
           {
@@ -230,7 +230,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: '<b>Sunita Devi</b> has been flagged \u2014 2 absences without leave, third time in 2 months. <b>Manoj Kumar</b> consistently late since mid-March.',
+        followUp: '<b>Sunita Devi</b> has been flagged \u2014 2 absences without leave, third time in 2 months. <b>Manoj Kumar</b> consistently late since mid-March',
         actions: ['Send warning to Sunita', 'View Manoj\'s history', 'Full punctuality report', 'Staff schedule overview'],
       },
     ],
@@ -241,10 +241,10 @@ export const conversations = {
     title: 'Analytics and trends',
     time: '3 days ago',
     messages: [
-      { role: 'user', text: 'Show me school analytics and performance trends.' },
+      { role: 'user', text: 'Show me school analytics and performance trends' },
       {
         role: 'ai',
-        text: 'Here are the <b>key analytics</b> for Shakti Shanti Academy this quarter.',
+        text: 'Here are the <b>key analytics</b> for Shakti Shanti Academy this quarter',
         tags: [{ name: 'Smart analytics', icon: 'BarChart3' }],
         widgets: [
           {
@@ -279,7 +279,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: '<b>Mathematics</b> scores dropped 2% \u2014 Class 6B and 7C need attention. <b>Science</b> is trending up with a strong 3% improvement. Enrollment is steady with 12 new admissions this month.',
+        followUp: '<b>Mathematics</b> scores dropped 2% \u2014 Class 6B and 7C need attention. <b>Science</b> is trending up with a strong 3% improvement. Enrollment is steady with 12 new admissions this month',
         actions: ['Class-wise breakdown', 'Subject deep-dive', 'Parent report cards', 'Trend comparison'],
       },
     ],
@@ -293,7 +293,7 @@ export const conversations = {
       { role: 'user', text: 'Are there any urgent alerts or flags I should know about?' },
       {
         role: 'ai',
-        text: 'Here are the <b>active alerts</b> that need your attention.',
+        text: 'Here are the <b>active alerts</b> that need your attention',
         tags: [{ name: 'Smart alerts', icon: 'AlertTriangle' }],
         widgets: [
           {
@@ -322,7 +322,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: 'The 3 critical items need immediate action. <b>Sunita Devi</b> has a pattern of unauthorized absences. <b>Rahul Gupta\'s</b> fee situation needs escalation. <b>Class 6B</b> may need additional math support.',
+        followUp: 'The 3 critical items need immediate action. <b>Sunita Devi</b> has a pattern of unauthorized absences. <b>Rahul Gupta\'s</b> fee situation needs escalation. <b>Class 6B</b> may need additional math support',
         actions: ['Address staff issue', 'Escalate fee defaulter', 'Review Class 6B', 'Dismiss info alerts'],
       },
     ],
@@ -333,10 +333,10 @@ export const conversations = {
     title: 'Financial summary Q4',
     time: '3 days ago',
     messages: [
-      { role: 'user', text: 'Show me the financial summary for this quarter.' },
+      { role: 'user', text: 'Show me the financial summary for this quarter' },
       {
         role: 'ai',
-        text: 'Here\'s the <b>financial overview</b> for Q4 FY2025-26.',
+        text: 'Here\'s the <b>financial overview</b> for Q4 FY2025-26',
         tags: [{ name: 'Financial reports', icon: 'FileText' }],
         widgets: [
           {
@@ -372,7 +372,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: 'Healthy surplus of <b>\u20B93.7L</b> this quarter. Teaching materials budget slightly exceeded \u2014 due to new science lab equipment purchase. Overall budget utilization is strong at 92%.',
+        followUp: 'Healthy surplus of <b>\u20B93.7L</b> this quarter. Teaching materials budget slightly exceeded \u2014 due to new science lab equipment purchase. Overall budget utilization is strong at 92%',
         actions: ['Monthly breakdown', 'Expense forecast', 'Download P&L statement', 'Budget vs actual chart'],
       },
     ],
@@ -383,10 +383,10 @@ export const conversations = {
     title: 'Weekly health report',
     time: '5 days ago',
     messages: [
-      { role: 'user', text: 'Generate the weekly school health report.' },
+      { role: 'user', text: 'Generate the weekly school health report' },
       {
         role: 'ai',
-        text: 'Here\'s the <b>AI-generated weekly health report</b> for Shakti Shanti Academy.',
+        text: 'Here\'s the <b>AI-generated weekly health report</b> for Shakti Shanti Academy',
         tags: [{ name: 'AI health report', icon: 'Activity' }],
         widgets: [
           {
@@ -411,7 +411,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: 'Overall health score is <b>84/100</b> \u2014 a slight improvement from last week (82). Key concerns: <b>staff reliability</b> dropped 3% due to Sunita Devi and Manoj Kumar. <b>Math academic performance</b> continues its downward trend.',
+        followUp: 'Overall health score is <b>84/100</b> \u2014 a slight improvement from last week (82). Key concerns: <b>staff reliability</b> dropped 3% due to Sunita Devi and Manoj Kumar. <b>Math academic performance</b> continues its downward trend',
         actions: ['Share with management', 'Drill into staff issues', 'Academic improvement plan', 'Historical comparison'],
       },
     ],
@@ -422,10 +422,10 @@ export const conversations = {
     title: 'Recent announcements',
     time: '2 days ago',
     messages: [
-      { role: 'user', text: 'Show me recent and upcoming announcements.' },
+      { role: 'user', text: 'Show me recent and upcoming announcements' },
       {
         role: 'ai',
-        text: 'Here are the <b>announcements</b> for Shakti Shanti Academy.',
+        text: 'Here are the <b>announcements</b> for Shakti Shanti Academy',
         tags: [{ name: 'Announcements', icon: 'Megaphone' }],
         widgets: [
           {
@@ -457,7 +457,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: 'All active announcements have good read rates. The fee payment reminder to defaulters has a lower rate (78%) \u2014 consider following up with a phone call for the 34 students.',
+        followUp: 'All active announcements have good read rates. The fee payment reminder to defaulters has a lower rate (78%) \u2014 consider following up with a phone call for the 34 students',
         actions: ['Create new announcement', 'Resend to unread', 'Schedule broadcast', 'View all past'],
       },
     ],
@@ -468,10 +468,10 @@ export const conversations = {
     title: 'Pending leave requests',
     time: '1 day ago',
     messages: [
-      { role: 'user', text: 'Show me all pending leave requests.' },
+      { role: 'user', text: 'Show me all pending leave requests' },
       {
         role: 'ai',
-        text: 'Here are all <b>pending leave requests</b> awaiting your approval.',
+        text: 'Here are all <b>pending leave requests</b> awaiting your approval',
         tags: [{ name: 'Leave manager', icon: 'ClipboardList' }],
         widgets: [
           {
@@ -495,7 +495,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: '<b>Ramesh</b> and <b>Deepa</b> are urgent \u2014 their leaves start in 2 days. <b>Meera Joshi\'s</b> 5-day request overlaps with the Annual Day planning week. Consider approving the short leaves first.',
+        followUp: '<b>Ramesh</b> and <b>Deepa</b> are urgent \u2014 their leaves start in 2 days. <b>Meera Joshi\'s</b> 5-day request overlaps with the Annual Day planning week. Consider approving the short leaves first',
         actions: ['Approve all short leaves', 'Approve Ramesh', 'Approve Deepa', 'Reject Meera (conflict)', 'View leave balance'],
       },
     ],
@@ -506,10 +506,10 @@ export const conversations = {
     title: 'Admission status 2026-27',
     time: '1 week ago',
     messages: [
-      { role: 'user', text: 'Show me the admission funnel for the upcoming session.' },
+      { role: 'user', text: 'Show me the admission funnel for the upcoming session' },
       {
         role: 'ai',
-        text: 'Here\'s the <b>admission pipeline</b> for session 2026-27.',
+        text: 'Here\'s the <b>admission pipeline</b> for session 2026-27',
         tags: [{ name: 'Admission funnel', icon: 'UserPlus' }],
         widgets: [
           {
@@ -534,7 +534,7 @@ export const conversations = {
             },
           },
         ],
-        followUp: 'Strong enrollment so far with <b>38 admissions</b> confirmed. <b>Nursery</b> and <b>Class 6</b> seats are filling up fast. <b>Class 9</b> has low conversion \u2014 only 2 out of 10 enquiries converted. Consider targeted outreach.',
+        followUp: 'Strong enrollment so far with <b>38 admissions</b> confirmed. <b>Nursery</b> and <b>Class 6</b> seats are filling up fast. <b>Class 9</b> has low conversion \u2014 only 2 out of 10 enquiries converted. Consider targeted outreach',
         actions: ['View pending applications', 'Send follow-up to enquiries', 'Seat availability report', 'Admission revenue forecast'],
       },
     ],
@@ -591,16 +591,16 @@ export const toolFollowUps = {
 };
 
 export const toolIntros = {
-  school_pulse: "Pulling up today's school pulse.",
-  fee_collection: "Checking fee collection data.",
-  staff_tracker: "Pulling staff attendance records.",
-  smart_analytics: "Running analytics.",
-  smart_alerts: "Checking active alerts.",
-  financial_reports: "Generating financial summary.",
-  ai_health_report: "Computing health report.",
-  announcements: "Checking announcements.",
-  leave_manager: "Looking at leave requests.",
-  admission_funnel: "Pulling admission pipeline.",
+  school_pulse: "Pulling up today's school pulse",
+  fee_collection: "Checking fee collection data",
+  staff_tracker: "Pulling staff attendance records",
+  smart_analytics: "Running analytics",
+  smart_alerts: "Checking active alerts",
+  financial_reports: "Generating financial summary",
+  ai_health_report: "Computing health report",
+  announcements: "Checking announcements",
+  leave_manager: "Looking at leave requests",
+  admission_funnel: "Pulling admission pipeline",
 };
 
 export const paramKeywords = {
@@ -609,10 +609,10 @@ export const paramKeywords = {
   announcements: ['create', 'new', 'send', 'view', 'recent', 'schedule', 'broadcast'],
 };
 
-export const clarifyResponse = "I'd be happy to help! Could you tell me more about what you need? I can assist with:\n\n\u2022 <b>School overview</b> \u2014 today's pulse and snapshot\n\u2022 <b>Fee collection</b> \u2014 defaulters, reminders, reports\n\u2022 <b>Staff tracking</b> \u2014 attendance, late arrivals, absences\n\u2022 <b>Analytics</b> \u2014 enrollment trends, performance data\n\u2022 <b>Alerts</b> \u2014 exceptions and urgent flags\n\u2022 <b>Finances</b> \u2014 income, expenses, budget reports\n\u2022 <b>Health report</b> \u2014 weekly school health score\n\u2022 <b>Announcements</b> \u2014 create or view broadcasts\n\u2022 <b>Leave management</b> \u2014 approve or reject requests\n\u2022 <b>Admissions</b> \u2014 enquiry pipeline and conversions\n\nDescribe what you need, or type <b>/</b> to pick a specific tool.";
+export const clarifyResponse = "I'd be happy to help! Could you tell me more about what you need? I can assist with:\n\n\u2022 <b>School overview</b> \u2014 today's pulse and snapshot\n\u2022 <b>Fee collection</b> \u2014 defaulters, reminders, reports\n\u2022 <b>Staff tracking</b> \u2014 attendance, late arrivals, absences\n\u2022 <b>Analytics</b> \u2014 enrollment trends, performance data\n\u2022 <b>Alerts</b> \u2014 exceptions and urgent flags\n\u2022 <b>Finances</b> \u2014 income, expenses, budget reports\n\u2022 <b>Health report</b> \u2014 weekly school health score\n\u2022 <b>Announcements</b> \u2014 create or view broadcasts\n\u2022 <b>Leave management</b> \u2014 approve or reject requests\n\u2022 <b>Admissions</b> \u2014 enquiry pipeline and conversions\n\nDescribe what you need, or type <b>/</b> to pick a specific tool";
 
 export const genericResponses = [
-  "I'll look into that for you. Could you be more specific about which module you'd like me to pull up? You can try asking about fees, staff, analytics, alerts, finances, announcements, leaves, or admissions.",
-  "I understand your query. Let me suggest: try using one of the tools on the left panel for detailed reports. You can ask about school pulse, fee collection, staff tracking, or any other module.",
-  "I'm here to help! For the best results, try asking about specific areas like attendance, fee collection, staff performance, or academic analytics.",
+  "I'll look into that for you. Could you be more specific about which module you'd like me to pull up? You can try asking about fees, staff, analytics, alerts, finances, announcements, leaves, or admissions",
+  "I understand your query. Let me suggest: try using one of the tools on the left panel for detailed reports. You can ask about school pulse, fee collection, staff tracking, or any other module",
+  "I'm here to help! For the best results, try asking about specific areas like attendance, fee collection, staff performance, or academic analytics",
 ];
