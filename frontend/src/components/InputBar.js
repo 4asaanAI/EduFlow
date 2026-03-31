@@ -183,10 +183,7 @@ export default function InputBar({ onSend, draft = '', convId, onDraftChange }) 
         <button type="submit" className="ef-send-btn" data-testid="send-message-btn"><Send size={16} /></button>
       </form>
       <div className="ef-input-hint">
-        <kbd>/</kbd> insert tool &middot; <kbd>@</kbd> mention student &middot; or just describe what you need
-      </div>
-      <div className="ef-disclaimer" data-testid="ai-disclaimer">
-        EduFlow is AI and can make mistakes. Please double-check responses
+        <kbd>/</kbd> tool search &middot; <kbd>@</kbd> mentions &middot; EduFlow is AI and can make mistakes. Please double-check responses
       </div>
     </div>
   );

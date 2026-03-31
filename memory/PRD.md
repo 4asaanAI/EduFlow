@@ -1,28 +1,35 @@
-# EduFlow - School Management Dashboard
+# EduFlow - School Management AI Dashboard
 
 ## Original Problem Statement
-Build a fully functional app for the POV of the school owner based on an attached HTML reference. Frontend-only with static mock data covering all modules. Available tools panel on the left sidebar above chat history.
+Build a fully functional, responsive frontend-only app for the POV of a school owner. The app is an AI-powered school management dashboard with a chat-first interface where the AI acts as a "waiter" handling tasks inline with rich widgets (tables, charts, stats).
 
 ## Architecture
-- React frontend (no backend APIs used)
-- Static/mock data in mockData.js
-- Custom CSS + Tailwind + Shadcn UI components
-- Recharts for analytics charts
-- Sonner for toast notifications
+- **Frontend Only** - React + Custom CSS (Tailwind-like utility via CSS variables)
+- **No Backend** - All data is static/mock from `/app/frontend/src/data/mockData.js`
+- **Components**: Sidebar, ChatMessage, InputBar, ToolView, NotificationPanel, SearchModal
 
-## What's Been Implemented (Feb 2026)
-- Full chat-based AI assistant interface (EduFlow AI)
-- Left sidebar: 10 tools panel + chat history + New Chat
-- 10 modules with rich mock data: School Pulse, Fee Collection, Staff Tracker, Smart Analytics, Smart Alerts, Financial Reports, AI Health Report, Announcements, Leave Manager, Admission Funnel
-- Morning briefing default conversation (multi-turn)
-- Data widgets with stat cards, tables, charts
-- Action buttons with toast feedback
-- Keyword-based message routing
-- Typing indicator animation
-- Responsive design with mobile hamburger menu
-- Owner name: Aman
+## What's Been Implemented
+- Base UI layout (Sidebar with tools + chat history, main chat area)
+- Slash commands (`/`) and `@` student mentions in input
+- Light/Dark mode toggle
+- Editable chat names, star, pin, delete
+- Tool-specific dedicated views via Sidebar
+- Chat-first smart routing (tools handled inline in chat)
+- General knowledge detection + notification bell + Cmd+K search bar
+- No trailing periods on any UI text (user rule)
+- Hyperlinked `/tool` mentions in chat messages (clickable, navigate to tool view)
+- Input draft preservation on view switch
+- AI disclaimer merged into input hint line
+- Widened & centered search bar in top bar
+- Person search (students + staff) in search modal
+
+## Key User Rules
+- **No trailing periods** at end of any sentence across the product
+- Owner name is "Aman"
+- School name is "Shakti Shanti Academy"
+
+## Completed Tasks (Feb 2026)
+- All features listed above are complete and tested
 
 ## Backlog
-- P1: Testing agent full pass
-- P2: Slash command (/) tool picker dropdown
-- P2: @ mention student autocomplete
+- None currently — all user-requested features have been implemented
