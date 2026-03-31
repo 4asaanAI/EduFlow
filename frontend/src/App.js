@@ -5,8 +5,10 @@ import ChatMessage from '@/components/ChatMessage';
 import InputBar from '@/components/InputBar';
 import ToolView from '@/components/ToolView';
 import { Toaster, toast } from 'sonner';
-import { tools, conversations, defaultHistory, keywordMap, toolFollowUps, toolIntros, paramKeywords, clarifyResponse } from '@/data/mockData';
-import { Menu, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { tools, conversations, defaultHistory, keywordMap, toolFollowUps, toolIntros, paramKeywords, clarifyResponse, generalKnowledge } from '@/data/mockData';
+import { Menu, Sun, Moon, ArrowLeft, Search } from 'lucide-react';
+import NotificationPanel from '@/components/NotificationPanel';
+import SearchModal from '@/components/SearchModal';
 
 function App() {
   const [activeConvId, setActiveConvId] = useState('morning_briefing');
@@ -18,6 +20,7 @@ function App() {
   const [typing, setTyping] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [pendingTool, setPendingTool] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const chatRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
@@ -62,6 +65,16 @@ function App() {
     return keywords.some(k => lower.includes(k));
   };
 
+  const detectGeneralKnowledge = (text) => {
+    const lower = text.toLowerCase();
+    for (const [, topic] of Object.entries(generalKnowledge)) {
+      if (topic.keywords.some(k => lower.includes(k))) {
+        return { ...topic.response };
+      }
+    }
+    return null;
+  };
+
   // --- Smart response engine ---
   const processMessage = (text, convId) => {
     // 1. If waiting for params from previous question, use the pending tool
@@ -78,7 +91,13 @@ function App() {
     // 3. If no explicit tool, auto-detect from keywords
     if (!toolId) toolId = detectFromKeywords(text);
 
-    // 4. No tool found at all → ask for clarification
+    // 4. Check general knowledge topics (beyond tools)
+    if (!toolId) {
+      const knowledgeMatch = detectGeneralKnowledge(text);
+      if (knowledgeMatch) return knowledgeMatch;
+    }
+
+    // 5. No tool found at all → ask for clarification
     if (!toolId) {
       return { role: 'ai', text: clarifyResponse };
     }
@@ -194,6 +213,22 @@ function App() {
   const toggleTheme = () => setTheme(p => p === 'dark' ? 'light' : 'dark');
   const activeToolName = tools.find(t => t.id === activeToolId)?.name || '';
 
+  const handleSearchToggle = (action) => {
+    if (action === 'toggle') setSearchOpen(p => !p);
+    else setSearchOpen(false);
+  };
+
+  const handleSearchSendMessage = (text) => {
+    setSearchOpen(false);
+    // Ensure we're in chat mode
+    if (viewMode !== 'chat' || !allConvs[activeConvId]) {
+      handleNewChat();
+      setTimeout(() => handleSend(text), 200);
+    } else {
+      handleSend(text);
+    }
+  };
+
   return (
     <div className="ef-app" data-testid="eduflow-app" data-theme={theme}>
       <Sidebar tools={tools} history={history} activeConvId={activeConvId} activeToolId={activeToolId} viewMode={viewMode}
@@ -210,6 +245,11 @@ function App() {
             </button>
           )}
           <div className="ef-top-title">EduFlow AI</div>
+          <button className="ef-search-btn" onClick={() => setSearchOpen(true)} data-testid="search-btn">
+            <Search size={15} /> <span className="ef-search-btn-text">Search</span> <kbd className="ef-search-btn-kbd">\u2318K</kbd>
+          </button>
+          <div className="ef-top-spacer" />
+          <NotificationPanel />
           <div className="ef-role-pill" data-testid="role-pill"><span className="ef-role-dot" /> Owner &mdash; Aman</div>
           <button className="ef-theme-toggle" onClick={toggleTheme} data-testid="theme-toggle-btn" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -240,6 +280,8 @@ function App() {
 
       <Toaster theme={theme} position="bottom-right"
         toastOptions={{ style: theme === 'dark' ? { background: '#15151f', border: '1px solid rgba(255,255,255,0.09)', color: '#ededeb' } : { background: '#ffffff', border: '1px solid rgba(0,0,0,0.1)', color: '#1a1a1e' } }} />
+      <SearchModal open={searchOpen} onClose={handleSearchToggle} history={history}
+        onToolClick={handleToolClick} onConvClick={handleConvClick} onSendMessage={handleSearchSendMessage} />
     </div>
   );
 }

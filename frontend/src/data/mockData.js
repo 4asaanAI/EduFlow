@@ -609,7 +609,291 @@ export const paramKeywords = {
   announcements: ['create', 'new', 'send', 'view', 'recent', 'schedule', 'broadcast'],
 };
 
-export const clarifyResponse = "I'd be happy to help! Could you tell me more about what you need? I can assist with:\n\n\u2022 <b>School overview</b> \u2014 today's pulse and snapshot\n\u2022 <b>Fee collection</b> \u2014 defaulters, reminders, reports\n\u2022 <b>Staff tracking</b> \u2014 attendance, late arrivals, absences\n\u2022 <b>Analytics</b> \u2014 enrollment trends, performance data\n\u2022 <b>Alerts</b> \u2014 exceptions and urgent flags\n\u2022 <b>Finances</b> \u2014 income, expenses, budget reports\n\u2022 <b>Health report</b> \u2014 weekly school health score\n\u2022 <b>Announcements</b> \u2014 create or view broadcasts\n\u2022 <b>Leave management</b> \u2014 approve or reject requests\n\u2022 <b>Admissions</b> \u2014 enquiry pipeline and conversions\n\nDescribe what you need, or type <b>/</b> to pick a specific tool";
+export const generalKnowledge = {
+  student_info: {
+    keywords: ['student', 'rahul', 'sneha', 'amit', 'pooja', 'vikram', 'arjun', 'priya', 'neha', 'rohan', 'ananya', 'karan', 'divya'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>student information</b> you asked about',
+      widgets: [{
+        title: 'Student Directory \u2014 Quick Lookup',
+        icon: 'Users',
+        stats: [
+          { value: '438', label: 'Total students', color: '' },
+          { value: '225', label: 'Boys', color: 'blue' },
+          { value: '213', label: 'Girls', color: 'purple' },
+          { value: '12', label: 'New this month', color: 'green' },
+        ],
+        table: {
+          headers: ['Student', 'Class', 'Attendance', 'Fee Status', 'Avg Score'],
+          rows: [
+            [{ text: 'Rahul Gupta' }, { text: '10A' }, { text: '88%' }, { text: 'Overdue', color: 'red' }, { text: '72%' }],
+            [{ text: 'Sneha Kumari' }, { text: '8B' }, { text: '92%' }, { text: 'Overdue', color: 'red' }, { text: '85%' }],
+            [{ text: 'Arjun Patel' }, { text: '10B' }, { text: '95%' }, { text: 'Paid', color: 'green' }, { text: '89%' }],
+            [{ text: 'Ananya Joshi' }, { text: '6A' }, { text: '90%' }, { text: 'Paid', color: 'green' }, { text: '78%' }],
+            [{ text: 'Karan Thakur' }, { text: '10A' }, { text: '87%' }, { text: 'Partial', color: 'orange' }, { text: '75%' }],
+          ],
+        },
+        footer: '+ 433 more students',
+      }],
+      actions: ['View full directory', 'Search specific student', 'Export to Excel'],
+    },
+  },
+  class_info: {
+    keywords: ['class 6', 'class 7', 'class 8', 'class 9', 'class 10', 'section', 'grade', 'class detail', 'class info', 'class wise'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>class-wise overview</b> for Shakti Shanti Academy',
+      widgets: [{
+        title: 'Class Overview \u2014 All Sections',
+        icon: 'Users',
+        stats: [
+          { value: '15', label: 'Total classes', color: '' },
+          { value: '438', label: 'Total students', color: '' },
+          { value: '29', label: 'Avg class size', color: '' },
+          { value: '91%', label: 'Avg attendance', color: 'green' },
+        ],
+        table: {
+          headers: ['Class', 'Students', 'Attendance', 'Avg Score', 'Fee Collection'],
+          rows: [
+            [{ text: 'Class 10A' }, { text: '42' }, { text: '93%', color: 'green' }, { text: '82%' }, { text: '90%', color: 'green' }],
+            [{ text: 'Class 10B' }, { text: '40' }, { text: '90%' }, { text: '78%' }, { text: '85%' }],
+            [{ text: 'Class 9A' }, { text: '45' }, { text: '89%' }, { text: '76%' }, { text: '75%', color: 'orange' }],
+            [{ text: 'Class 8B' }, { text: '38' }, { text: '92%', color: 'green' }, { text: '80%' }, { text: '88%' }],
+            [{ text: 'Class 6B' }, { text: '35' }, { text: '88%' }, { text: '71%', color: 'orange' }, { text: '82%' }],
+          ],
+        },
+        footer: '+ 10 more classes',
+      }],
+      actions: ['View all classes', 'Compare sections', 'Class performance report'],
+    },
+  },
+  exam_info: {
+    keywords: ['exam', 'test', 'board', 'result', 'marks', 'unit test', 'mock test', 'assessment'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>exam and assessment</b> information',
+      widgets: [{
+        title: 'Exams & Assessments \u2014 Overview',
+        icon: 'FileText',
+        stats: [
+          { value: '3', label: 'Upcoming exams', color: 'blue' },
+          { value: '78%', label: 'Last test avg', color: '' },
+          { value: '92%', label: 'Pass rate', color: 'green' },
+          { value: '5', label: 'Results pending', color: 'orange' },
+        ],
+        table: {
+          headers: ['Exam', 'Class', 'Date', 'Status'],
+          rows: [
+            [{ text: 'Board Pre-board 2' }, { text: '10' }, { text: '5 Apr' }, { text: 'Upcoming', color: 'blue' }],
+            [{ text: 'Unit Test 4' }, { text: '6-9' }, { text: '10 Apr' }, { text: 'Scheduled', color: 'blue' }],
+            [{ text: 'Class Test (Math)' }, { text: '6B' }, { text: '2 Apr' }, { text: 'Upcoming', color: 'blue' }],
+            [{ text: 'Unit Test 3 Results' }, { text: '6-9' }, { text: '25 Mar' }, { text: 'Results out', color: 'green' }],
+            [{ text: 'Board Mock Test 1' }, { text: '10' }, { text: '20 Mar' }, { text: 'Results out', color: 'green' }],
+          ],
+        },
+      }],
+      actions: ['View upcoming exams', 'Past results', 'Generate report cards', 'Board exam prep status'],
+    },
+  },
+  timetable: {
+    keywords: ['timetable', 'schedule', 'period', 'time table', 'class timing', 'school hours'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s today\'s <b>timetable overview</b>',
+      widgets: [{
+        title: 'School Timetable \u2014 Monday, 30 March',
+        icon: 'Clock',
+        stats: [
+          { value: '8', label: 'Periods today', color: '' },
+          { value: '8:00 AM', label: 'School starts', color: '' },
+          { value: '2:30 PM', label: 'School ends', color: '' },
+          { value: '3', label: 'Subs needed', color: 'orange' },
+        ],
+        table: {
+          headers: ['Period', 'Time', 'Class 10A', 'Class 9A', 'Class 8B'],
+          rows: [
+            [{ text: '1' }, { text: '8:00-8:40' }, { text: 'Math' }, { text: 'English' }, { text: 'Science' }],
+            [{ text: '2' }, { text: '8:40-9:20' }, { text: 'English' }, { text: 'Math' }, { text: 'Hindi' }],
+            [{ text: '3' }, { text: '9:20-10:00' }, { text: 'Science' }, { text: 'Hindi' }, { text: 'Math' }],
+            [{ text: '4' }, { text: '10:00-10:40' }, { text: 'Hindi' }, { text: 'Science' }, { text: 'English' }],
+            [{ text: '5' }, { text: '11:00-11:40' }, { text: 'SST' }, { text: 'SST' }, { text: 'Computer' }],
+          ],
+        },
+        footer: '3 more periods + substitution schedule',
+      }],
+      actions: ['Full timetable', 'Substitution list', 'Weekly schedule', 'Teacher workload'],
+    },
+  },
+  events: {
+    keywords: ['event', 'annual day', 'sports day', 'function', 'celebration', 'calendar', 'upcoming'],
+    response: {
+      role: 'ai',
+      text: 'Here are the <b>upcoming events</b> for Shakti Shanti Academy',
+      widgets: [{
+        title: 'Events Calendar \u2014 April 2026',
+        icon: 'Clock',
+        stats: [
+          { value: '6', label: 'Events this month', color: '' },
+          { value: '2', label: 'Holidays', color: 'green' },
+          { value: '1', label: 'Major event', color: 'blue' },
+          { value: '3', label: 'Need prep', color: 'orange' },
+        ],
+        table: {
+          headers: ['Event', 'Date', 'Type', 'Status'],
+          rows: [
+            [{ text: 'PTM Day' }, { text: '5 Apr' }, { text: 'Meeting' }, { text: 'Confirmed', color: 'green' }],
+            [{ text: 'Ambedkar Jayanti' }, { text: '14 Apr' }, { text: 'Holiday' }, { text: 'Holiday', color: 'blue' }],
+            [{ text: 'Annual Day' }, { text: '15 Apr' }, { text: 'Major Event' }, { text: 'Planning', color: 'orange' }],
+            [{ text: 'Science Exhibition' }, { text: '18 Apr' }, { text: 'Academic' }, { text: 'Planning', color: 'orange' }],
+            [{ text: 'Earth Day Activity' }, { text: '22 Apr' }, { text: 'Activity' }, { text: 'Planned', color: 'green' }],
+          ],
+        },
+      }],
+      actions: ['View full calendar', 'Create new event', 'Annual Day prep checklist'],
+    },
+  },
+  transport: {
+    keywords: ['bus', 'transport', 'route', 'vehicle', 'driver', 'pick up', 'drop'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>transport overview</b>',
+      widgets: [{
+        title: 'Transport Status \u2014 Today',
+        icon: 'Users',
+        stats: [
+          { value: '6', label: 'Buses active', color: 'green' },
+          { value: '180', label: 'Students using', color: '' },
+          { value: '12', label: 'Routes', color: '' },
+          { value: '1', label: 'Issue flagged', color: 'orange' },
+        ],
+        table: {
+          headers: ['Bus #', 'Driver', 'Route', 'Students', 'Status'],
+          rows: [
+            [{ text: 'Bus 1' }, { text: 'Raju Singh' }, { text: 'Sector 15-22' }, { text: '32' }, { text: 'On time', color: 'green' }],
+            [{ text: 'Bus 2' }, { text: 'Mohan Lal' }, { text: 'Civil Lines' }, { text: '28' }, { text: 'On time', color: 'green' }],
+            [{ text: 'Bus 3' }, { text: 'Suresh Yadav' }, { text: 'Old City' }, { text: '35' }, { text: 'Insurance due', color: 'orange' }],
+            [{ text: 'Bus 4' }, { text: 'Deepak Verma' }, { text: 'Railway Colony' }, { text: '30' }, { text: 'On time', color: 'green' }],
+          ],
+        },
+      }],
+      actions: ['View all routes', 'Bus 3 insurance', 'Transport fee collection', 'Add new route'],
+    },
+  },
+  infrastructure: {
+    keywords: ['building', 'lab', 'library', 'room', 'facility', 'infrastructure', 'maintenance', 'repair', 'classroom'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>infrastructure status</b> report',
+      widgets: [{
+        title: 'Infrastructure & Facilities',
+        icon: 'FileText',
+        stats: [
+          { value: '24', label: 'Classrooms', color: '' },
+          { value: '3', label: 'Labs', color: '' },
+          { value: '2', label: 'Maintenance due', color: 'orange' },
+          { value: '95%', label: 'Operational', color: 'green' },
+        ],
+        table: {
+          headers: ['Facility', 'Status', 'Last Inspected', 'Action Needed'],
+          rows: [
+            [{ text: 'Science Lab' }, { text: 'Maintenance due', color: 'orange' }, { text: '15 Mar' }, { text: 'Equipment calibration' }],
+            [{ text: 'Computer Lab' }, { text: 'Operational', color: 'green' }, { text: '22 Mar' }, { text: 'None' }],
+            [{ text: 'Library' }, { text: 'Operational', color: 'green' }, { text: '20 Mar' }, { text: 'New books ordered' }],
+            [{ text: 'Playground' }, { text: 'Repair needed', color: 'red' }, { text: '10 Mar' }, { text: 'Boundary wall fix' }],
+            [{ text: 'Auditorium' }, { text: 'Operational', color: 'green' }, { text: '28 Mar' }, { text: 'Annual Day prep' }],
+          ],
+        },
+      }],
+      actions: ['Schedule maintenance', 'Facility report', 'Budget for repairs', 'Safety checklist'],
+    },
+  },
+  parent: {
+    keywords: ['parent', 'ptm', 'feedback', 'complaint', 'meeting', 'guardian', 'mother', 'father'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>parent engagement</b> overview',
+      widgets: [{
+        title: 'Parent Communication \u2014 March 2026',
+        icon: 'Megaphone',
+        stats: [
+          { value: '89%', label: 'PTM attendance', color: 'green' },
+          { value: '12', label: 'Open complaints', color: 'orange' },
+          { value: '95%', label: 'WhatsApp reach', color: 'green' },
+          { value: '4.2/5', label: 'Satisfaction', color: '' },
+        ],
+        table: {
+          headers: ['Topic', 'Count', 'Status', 'Priority'],
+          rows: [
+            [{ text: 'Fee-related queries' }, { text: '5' }, { text: 'Open', color: 'orange' }, { text: 'High' }],
+            [{ text: 'Bus timing complaints' }, { text: '3' }, { text: 'In progress' }, { text: 'Medium' }],
+            [{ text: 'Academic concerns' }, { text: '2' }, { text: 'Open', color: 'orange' }, { text: 'High' }],
+            [{ text: 'Cafeteria feedback' }, { text: '1' }, { text: 'Resolved', color: 'green' }, { text: 'Low' }],
+            [{ text: 'General appreciation' }, { text: '4' }, { text: 'Noted', color: 'green' }, { text: '\u2014' }],
+          ],
+        },
+      }],
+      actions: ['View all complaints', 'Schedule PTM', 'Send circular', 'Feedback summary'],
+    },
+  },
+  policy: {
+    keywords: ['policy', 'rule', 'regulation', 'uniform', 'discipline', 'code of conduct', 'attendance policy'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s a summary of <b>school policies</b> and compliance',
+      widgets: [{
+        title: 'School Policies & Compliance',
+        icon: 'FileText',
+        stats: [
+          { value: '18', label: 'Active policies', color: '' },
+          { value: '3', label: 'Under review', color: 'orange' },
+          { value: '96%', label: 'Compliance rate', color: 'green' },
+          { value: '2', label: 'Violations (Mar)', color: 'red' },
+        ],
+        table: {
+          headers: ['Policy', 'Last Updated', 'Compliance', 'Status'],
+          rows: [
+            [{ text: 'Attendance Policy' }, { text: 'Jan 2026' }, { text: '91%', color: 'green' }, { text: 'Active' }],
+            [{ text: 'Fee Payment Terms' }, { text: 'Mar 2026' }, { text: '86%' }, { text: 'Active' }],
+            [{ text: 'Uniform Code' }, { text: 'Apr 2025' }, { text: '98%', color: 'green' }, { text: 'Under review', color: 'orange' }],
+            [{ text: 'Anti-Bullying' }, { text: 'Jul 2025' }, { text: '99%', color: 'green' }, { text: 'Active' }],
+            [{ text: 'Staff Leave Policy' }, { text: 'Feb 2026' }, { text: '94%', color: 'green' }, { text: 'Active' }],
+          ],
+        },
+      }],
+      actions: ['View all policies', 'Update a policy', 'Compliance report', 'Violation log'],
+    },
+  },
+  homework: {
+    keywords: ['homework', 'assignment', 'project', 'submission', 'pending work'],
+    response: {
+      role: 'ai',
+      text: 'Here\'s the <b>homework and assignments</b> tracker',
+      widgets: [{
+        title: 'Homework Tracker \u2014 This Week',
+        icon: 'ClipboardList',
+        stats: [
+          { value: '24', label: 'Assigned this week', color: '' },
+          { value: '18', label: 'Submitted', color: 'green' },
+          { value: '6', label: 'Pending', color: 'orange' },
+          { value: '75%', label: 'Submission rate', color: '' },
+        ],
+        table: {
+          headers: ['Subject', 'Class', 'Assigned By', 'Due', 'Submissions'],
+          rows: [
+            [{ text: 'Math Worksheet' }, { text: '10A' }, { text: 'Manoj Kumar' }, { text: '31 Mar' }, { text: '38/42', color: 'green' }],
+            [{ text: 'Science Project' }, { text: '9A' }, { text: 'Priya Verma' }, { text: '2 Apr' }, { text: '20/45', color: 'orange' }],
+            [{ text: 'Hindi Essay' }, { text: '8B' }, { text: 'Sunita Devi' }, { text: '31 Mar' }, { text: '35/38', color: 'green' }],
+            [{ text: 'English Comprehension' }, { text: '7C' }, { text: 'Riya Sharma' }, { text: '1 Apr' }, { text: '22/50', color: 'orange' }],
+          ],
+        },
+      }],
+      actions: ['View all assignments', 'Low submission classes', 'Notify parents', 'Weekly homework report'],
+    },
+  },
+};
+
+export const clarifyResponse = "I'd be happy to help! Could you tell me more about what you need? I can assist with:\n\n\u2022 <b>School overview</b> \u2014 today's pulse and snapshot\n\u2022 <b>Fee collection</b> \u2014 defaulters, reminders, reports\n\u2022 <b>Staff tracking</b> \u2014 attendance, late arrivals, absences\n\u2022 <b>Analytics</b> \u2014 enrollment trends, performance data\n\u2022 <b>Alerts</b> \u2014 exceptions and urgent flags\n\u2022 <b>Finances</b> \u2014 income, expenses, budget reports\n\u2022 <b>Health report</b> \u2014 weekly school health score\n\u2022 <b>Announcements</b> \u2014 create or view broadcasts\n\u2022 <b>Leave management</b> \u2014 approve or reject requests\n\u2022 <b>Admissions</b> \u2014 enquiry pipeline and conversions\n\u2022 <b>Students</b> \u2014 individual or class-wise info\n\u2022 <b>Exams</b> \u2014 schedules, results, report cards\n\u2022 <b>Timetable</b> \u2014 daily schedule, substitutions\n\u2022 <b>Events</b> \u2014 upcoming functions and calendar\n\u2022 <b>Transport</b> \u2014 bus routes, drivers, status\n\u2022 <b>Infrastructure</b> \u2014 facilities, labs, maintenance\n\u2022 <b>Parents</b> \u2014 PTM, feedback, complaints\n\u2022 <b>Policies</b> \u2014 school rules and compliance\n\u2022 <b>Homework</b> \u2014 assignments and submissions\n\nDescribe what you need, or type <b>/</b> to pick a specific tool";
 
 export const genericResponses = [
   "I'll look into that for you. Could you be more specific about which module you'd like me to pull up? You can try asking about fees, staff, analytics, alerts, finances, announcements, leaves, or admissions",
