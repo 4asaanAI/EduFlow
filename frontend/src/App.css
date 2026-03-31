@@ -270,6 +270,7 @@
 .ef-msg.ai .ef-bubble {
   background: var(--bg-2);
   border: 1px solid var(--ef-border-h);
+  color: var(--tx-1);
 }
 .ef-msg.user .ef-bubble {
   background: var(--blue);
