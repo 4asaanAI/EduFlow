@@ -1,26 +1,37 @@
 import { Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { tools } from '@/data/mockData';
+import { tools, students } from '@/data/mockData';
 
 const iconMap = {
   Clock, IndianRupee, Users, BarChart3, AlertTriangle, FileText, Activity, Megaphone, ClipboardList, UserPlus,
 };
 
 const toolIdSet = new Set(tools.map(t => t.id));
+const studentNames = new Set(students.map(s => s.name));
 
-function processToolLinks(html) {
+function processInlineLinks(html) {
   if (!html) return html;
-  return html.replace(/\/([\w-]+)/g, (match, slug) => {
+  // Linkify /tool-slug references
+  let result = html.replace(/\/([\w-]+)/g, (match, slug) => {
     const toolId = slug.replace(/-/g, '_');
     if (toolIdSet.has(toolId)) {
       return `<span class="ef-tool-link" data-tool-id="${toolId}">${match}</span>`;
     }
     return match;
   });
+  // Highlight @Name mentions
+  result = result.replace(/@([\w][\w\s]*?)(?=\s@|\s\/|[.!?,;:]|\s*$)/g, (match, name) => {
+    const trimmed = name.trim();
+    if (studentNames.has(trimmed)) {
+      return `<span class="ef-mention-link">${match.trim()}</span>`;
+    }
+    return match;
+  });
+  return result;
 }
 
 function RenderHTML({ html }) {
-  return <span dangerouslySetInnerHTML={{ __html: processToolLinks(html) }} />;
+  return <span dangerouslySetInnerHTML={{ __html: processInlineLinks(html) }} />;
 }
 
 function StatCard({ stat }) {
