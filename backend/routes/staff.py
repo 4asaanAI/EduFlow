@@ -34,6 +34,19 @@ async def get_leave_requests(staff_id: str, request: Request):
     return {"success": True, "data": leaves}
 
 
+@router.get("/leaves/my")
+async def get_my_leaves(request: Request):
+    """Get current user's own leave requests (for teacher role)"""
+    db = get_db()
+    user = get_user(request)
+    # Find the staff record for this user
+    staff = await db.staff.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not staff:
+        return {"success": True, "data": []}
+    leaves = await db.leave_requests.find({"staff_id": staff["id"]}, {"_id": 0}).sort("applied_at", -1).to_list(20)
+    return {"success": True, "data": leaves}
+
+
 @router.get("/leaves/pending")
 async def get_pending_leaves(request: Request):
     db = get_db()

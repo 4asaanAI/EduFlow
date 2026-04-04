@@ -108,8 +108,14 @@ export function FeeTracker() {
   useEffect(() => { load(); getStudents(currentUser).then(r => { if (r.success) setStudents(r.data || []); }); }, []);
 
   const load = async () => {
+
+  const load = async () => {
     setLoading(true);
-    try { const r = await getFeeTransactions(currentUser, filter ? { status: filter } : {}); if (r.success) setTxns(r.data || []); } catch {}
+    try {
+      const params = filter ? { status: filter } : {};
+      const r = await getFeeTransactions(currentUser, params);
+      if (r.success) setTxns(r.data || []);
+    } catch {}
     setLoading(false);
   };
 
@@ -244,7 +250,7 @@ export function AttendanceRecorder() {
   );
 }
 
-// 4. Certificate Generator
+// 4. Certificate Generator - FIXED
 export function CertificateGenerator() {
   const { currentUser } = useUser();
   const [students, setStudents] = useState([]);
@@ -252,33 +258,87 @@ export function CertificateGenerator() {
   const [form, setForm] = useState({ student_id: '', cert_type: 'bonafide' });
   const f = k => v => setForm(p => ({ ...p, [k]: v }));
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState(null);
+
+  const loadCerts = async () => {
+    const r = await fetch(`${API}/ops/certificates`, { headers: h(currentUser) }).then(r => r.json());
+    if (r.success) setCerts(r.data || []);
+  };
 
   useEffect(() => {
     Promise.all([
       getStudents(currentUser).then(r => { if (r.success) setStudents(r.data || []); }),
-      fetch(`${API}/ops/certificates`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setCerts(r.data || []); })
+      loadCerts()
     ]).finally(() => setLoading(false));
   }, []);
 
   const generate = async () => {
     if (!form.student_id) return;
-    await fetch(`${API}/ops/certificates`, { method: 'POST', headers: h(currentUser), body: JSON.stringify({ student_id: form.student_id, cert_type: form.cert_type, content_data: { issued_by: 'The Aaryans School' } }) });
-    const r = await fetch(`${API}/ops/certificates`, { headers: h(currentUser) }).then(r => r.json());
-    if (r.success) setCerts(r.data || []);
+    setGenerating(true);
+    try {
+      const student = students.find(s => s.id === form.student_id);
+      const r = await fetch(`${API}/ops/certificates`, {
+        method: 'POST', headers: h(currentUser),
+        body: JSON.stringify({
+          student_id: form.student_id,
+          cert_type: form.cert_type,
+          content_data: {
+            student_name: student?.name || 'Student',
+            class: student?.class_info ? `${student.class_info.name}-${student.class_info.section}` : 'N/A',
+            issued_by: 'The Aaryans School',
+            issued_date: new Date().toISOString().slice(0, 10),
+            academic_year: '2025-26',
+          }
+        })
+      }).then(r => r.json());
+      if (r.success) {
+        setGenerated(r.data);
+        await loadCerts();
+      }
+    } catch {}
+    setGenerating(false);
   };
 
+  const certTypeLabels = { transfer: 'Transfer Certificate', bonafide: 'Bonafide Certificate', character: 'Character Certificate', sports: 'Sports Certificate', participation: 'Participation Certificate', migration: 'Migration Certificate' };
+
   return (
-    <ToolPage title="Certificate Generator" subtitle="Generate TC, Bonafide, Character certificates" onRefresh={() => window.location.reload()} loading={loading}>
-      <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16, maxWidth: 500 }}>
-        <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Generate Certificate</h3>
-        <FormField label="Student" type="select" value={form.student_id} onChange={f('student_id')} options={students.map(s => ({ value: s.id, label: s.name }))} required />
-        <FormField label="Certificate Type" type="select" value={form.cert_type} onChange={f('cert_type')} options={[{ value: 'transfer', label: 'Transfer Certificate' }, { value: 'bonafide', label: 'Bonafide Certificate' }, { value: 'character', label: 'Character Certificate' }, { value: 'sports', label: 'Sports Certificate' }]} />
-        <ActionBtn label="Generate Certificate" onClick={generate} />
+    <ToolPage title="Certificate Generator" subtitle="Generate TC, Bonafide, Character certificates" loading={loading}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 900 }}>
+        {/* Generator form */}
+        <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20 }}>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Generate Certificate</h3>
+          <FormField label="Student" type="select" value={form.student_id} onChange={f('student_id')}
+            options={students.map(s => ({ value: s.id, label: s.name }))} required />
+          <FormField label="Certificate Type" type="select" value={form.cert_type} onChange={f('cert_type')}
+            options={Object.entries(certTypeLabels).map(([v, l]) => ({ value: v, label: l }))} />
+          <ActionBtn label={generating ? 'Generating...' : 'Generate Certificate'} onClick={generate} disabled={generating || !form.student_id} />
+
+          {/* Preview */}
+          {generated && (
+            <div style={{ marginTop: 16, background: '#0F0F1A', border: '1px solid #222230', borderRadius: 8, padding: 16 }}>
+              <div style={{ fontSize: 11, color: '#10B981', fontWeight: 700, marginBottom: 8 }}>Certificate Generated!</div>
+              <div style={{ fontSize: 12, color: '#94A3B8' }}>
+                <div><b>Type:</b> {certTypeLabels[generated.cert_type]}</div>
+                <div><b>Serial:</b> {generated.serial_number}</div>
+                <div><b>Student:</b> {generated.content_data?.student_name}</div>
+                <div><b>Date:</b> {generated.issued_date}</div>
+              </div>
+              <div style={{ marginTop: 10, padding: '8px', background: '#161622', borderRadius: 6, fontSize: 11, color: '#64748B' }}>
+                PDF generation available in Phase 2. Certificate is saved and can be printed.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* History */}
+        <div>
+          <DataTable title={`Generated Certificates (${certs.length})`} headers={['Student', 'Type', 'Serial No.', 'Date']}
+            rows={certs.map(c => [c.student_name, certTypeLabels[c.cert_type] || c.cert_type, <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10 }}>{c.serial_number}</span>, c.issued_date])}
+            emptyMsg="No certificates generated yet"
+          />
+        </div>
       </div>
-      <DataTable title="Generated Certificates" headers={['Student', 'Type', 'Serial No.', 'Issued Date', 'Status']}
-        rows={certs.map(c => [c.student_name, c.cert_type, c.serial_number, c.issued_date, <Badge text={c.status} color={c.status === 'issued' ? 'green' : 'blue'} />])}
-        emptyMsg="No certificates generated yet"
-      />
     </ToolPage>
   );
 }

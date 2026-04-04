@@ -240,6 +240,20 @@ async def create_route(request: Request):
     return {"success": True, "data": route}
 
 
+@router.post("/study-plan")
+async def save_study_plan(request: Request):
+    db = get_db()
+    user = get_user(request)
+    body = await request.json()
+    from datetime import datetime as dt
+    await db.study_plans.update_one(
+        {"user_id": user["id"]},
+        {"$set": {**body, "user_id": user["id"], "updated_at": dt.now().isoformat()}},
+        upsert=True
+    )
+    return {"success": True}
+
+
 # --- Announcements ---
 @router.get("/announcements")
 async def list_announcements(request: Request):
@@ -327,7 +341,18 @@ async def apply_leave(request: Request):
     body = await request.json()
     staff = await db.staff.find_one({"user_id": user["id"]})
     if not staff:
-        raise HTTPException(404, "Staff record not found")
+        # Create a minimal staff record for this teacher if not found
+        from datetime import datetime as dt
+        import uuid
+        staff_id = str(uuid.uuid4())
+        await db.staff.insert_one({
+            "_id": staff_id, "id": staff_id, "user_id": user["id"],
+            "name": user.get("name", "Staff"), "staff_type": "teacher",
+            "is_active": True, "created_at": dt.now().isoformat(),
+        })
+        staff = {"id": staff_id}
+    from datetime import datetime as dt
+    import uuid
     leave = {
         "id": str(uuid.uuid4()),
         "staff_id": staff["id"],
@@ -336,7 +361,18 @@ async def apply_leave(request: Request):
         "end_date": body.get("end_date"),
         "reason": body.get("reason"),
         "status": "pending",
-        "applied_at": datetime.now().isoformat(),
+        "applied_at": dt.now().isoformat(),
     }
     await db.leave_requests.insert_one({**leave, "_id": leave["id"]})
     return {"success": True, "data": leave}
+
+
+# --- Study Planner ---
+@router.get("/study-plan")
+async def get_study_plan(request: Request):
+    db = get_db()
+    user = get_user(request)
+    plan = await db.study_plans.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not plan:
+        return {"success": True, "data": {"monday": "", "tuesday": "", "wednesday": "", "thursday": "", "friday": "", "saturday": ""}}
+    return {"success": True, "data": plan}

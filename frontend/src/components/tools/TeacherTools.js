@@ -22,7 +22,10 @@ export function ClassAttendanceMarker() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => { getAllClasses(currentUser).then(r => { if (r.success && r.data.length > 0) { setClasses(r.data); setSelectedClass(r.data[0].id); } }); }, []);
-  useEffect(() => { if (selectedClass) { setLoading(true); getTodayAttendance(selectedClass, currentUser).then(r => { if (r.success) setRecords(r.data || []); }).finally(() => setLoading(false)); } }, [selectedClass, date]);
+  useEffect(() => { if (selectedClass) { setLoading(true); 
+    fetch(`${API}/attendance/student/today/${selectedClass}?date=${date}`, { headers: h(currentUser) })
+      .then(r => r.json()).then(r => { if (r.success) setRecords(r.data || []); }).finally(() => setLoading(false)); 
+  } }, [selectedClass, date]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -208,61 +211,164 @@ export function ReportCardBuilder() {
   );
 }
 
-// 5. Student Performance Viewer
+// 5. Student Performance Viewer - ENHANCED
 export function StudentPerformanceViewer() {
   const { currentUser } = useUser();
   const [students, setStudents] = useState([]);
+  const [results, setResults] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { getStudents(currentUser).then(r => { if (r.success) setStudents(r.data || []); }).finally(() => setLoading(false)); }, []);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentResults, setStudentResults] = useState([]);
+  const [studentAtt, setStudentAtt] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      getStudents(currentUser).then(r => { if (r.success) setStudents(r.data || []); }),
+      fetch(`${API}/academics/results`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setResults(r.data || []); }),
+    ]).finally(() => setLoading(false));
+  }, []);
+
+  const viewStudent = async (student) => {
+    setSelectedStudent(student);
+    // Get results
+    const r1 = await fetch(`${API}/academics/results?student_id=${student.id}`, { headers: h(currentUser) }).then(r => r.json());
+    if (r1.success) setStudentResults(r1.data || []);
+    // Get attendance summary
+    const r2 = await fetch(`${API}/attendance/student?student_id=${student.id}`, { headers: h(currentUser) }).then(r => r.json());
+    if (r2.success) {
+      const records = r2.data || [];
+      const present = records.filter(r => r.status === 'present').length;
+      const total = records.length;
+      setStudentAtt({ present, absent: total - present, total, rate: total > 0 ? Math.round(present / total * 100) + '%' : 'N/A' });
+    }
+  };
+
+  // Aggregate: avg marks per student
+  const studentStats = students.slice(0, 20).map(s => {
+    const sResults = results.filter(r => r.student_id === s.id);
+    const avg = sResults.length > 0 ? Math.round(sResults.reduce((sum, r) => sum + (r.marks_obtained || 0), 0) / sResults.length) : null;
+    const grade = avg === null ? 'N/A' : avg >= 90 ? 'A1' : avg >= 80 ? 'A2' : avg >= 70 ? 'B1' : avg >= 60 ? 'B2' : 'C';
+    return { ...s, avg, grade, exams: sResults.length };
+  });
+
+  const gradeColor = { A1: 'green', A2: 'green', B1: 'blue', B2: 'blue', C: 'yellow', D: 'red', N: 'gray' };
+
   return (
-    <ToolPage title="Student Performance" subtitle="View marks & attendance trends" loading={loading}>
-      <DataTable headers={['Name', 'Class', 'Status']}
-        rows={students.slice(0, 15).map(s => [s.name, s.class_info ? `${s.class_info.name}-${s.class_info.section}` : 'N/A', <Badge text={s.status} color="green" />])}
-        emptyMsg="No students found"
-      />
+    <ToolPage title="Student Performance" subtitle="Marks, grades & attendance analytics" loading={loading}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 18, maxWidth: 700 }}>
+        <StatCard value={students.length} label="STUDENTS" color="#3B82F6" />
+        <StatCard value={results.length} label="EXAM ENTRIES" color="#8B5CF6" />
+        <StatCard value={studentStats.filter(s => s.avg && s.avg >= 80).length} label="ABOVE 80%" color="#10B981" />
+        <StatCard value={studentStats.filter(s => s.avg && s.avg < 60).length} label="BELOW 60%" color="#EF4444" />
+      </div>
+
+      {selectedStudent ? (
+        <div>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center' }}>
+            <ActionBtn label="← Back to All" variant="secondary" onClick={() => setSelectedStudent(null)} />
+            <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 15, fontWeight: 600, color: '#E2E8F0' }}>{selectedStudent.name}</span>
+          </div>
+          {studentAtt && (
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              {[['Attendance', studentAtt.rate, '#10B981'], ['Present', studentAtt.present, '#10B981'], ['Absent', studentAtt.absent, '#EF4444'], ['Total Days', studentAtt.total, '#E2E8F0']].map(([l, v, c]) => (
+                <StatCard key={l} value={v} label={l} color={c} small />
+              ))}
+            </div>
+          )}
+          <DataTable title={`Exam Results for ${selectedStudent.name}`} headers={['Subject', 'Marks', 'Max', 'Grade']}
+            rows={studentResults.map(r => [r.subject_name, r.marks_obtained, r.max_marks, <Badge text={r.grade || 'N/A'} color={gradeColor[r.grade?.[0]] || 'gray'} />])}
+            emptyMsg="No exam results entered yet"
+          />
+        </div>
+      ) : (
+        <DataTable title="Student Performance Overview" headers={['Name', 'Class', 'Exams', 'Avg Marks', 'Grade', 'Action']}
+          rows={studentStats.map(s => [
+            s.name,
+            s.class_info ? `${s.class_info.name}-${s.class_info.section}` : 'N/A',
+            s.exams,
+            s.avg !== null ? <span style={{ color: s.avg >= 80 ? '#10B981' : s.avg >= 60 ? '#F59E0B' : '#EF4444', fontWeight: 600 }}>{s.avg}%</span> : 'No data',
+            s.grade !== 'N/A' ? <Badge text={s.grade} color={gradeColor[s.grade[0]] || 'gray'} /> : <span style={{ color: '#64748B' }}>N/A</span>,
+            <button onClick={() => viewStudent(s)} style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 5, padding: '3px 8px', color: '#93C5FD', fontSize: 10, cursor: 'pointer' }}>View</button>
+          ])}
+          emptyMsg="No students found"
+        />
+      )}
     </ToolPage>
   );
 }
 
-// 6. Leave Application
+// 6. Leave Application - FIXED
 export function LeaveApplication() {
   const { currentUser } = useUser();
   const [myLeaves, setMyLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ leave_type: 'casual', start_date: '', end_date: '', reason: '' });
   const f = k => v => setForm(p => ({ ...p, [k]: v }));
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => { fetch(`${API}/staff/leaves/pending`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setMyLeaves(r.data || []); }).finally(() => setLoading(false)); }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      // Use my-leaves endpoint instead of pending (which requires owner/admin)
+      const r = await fetch(`${API}/staff/leaves/my`, { headers: h(currentUser) }).then(r => r.json());
+      if (r.success) setMyLeaves(r.data || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
 
   const handleApply = async (e) => {
     e.preventDefault();
-    await fetch(`${API}/ops/leaves`, { method: 'POST', headers: h(currentUser), body: JSON.stringify(form) });
-    setForm({ leave_type: 'casual', start_date: '', end_date: '', reason: '' });
-    alert('Leave application submitted successfully!');
+    if (!form.start_date || !form.end_date || !form.reason) return;
+    setSubmitting(true);
+    try {
+      const r = await fetch(`${API}/ops/leaves`, { method: 'POST', headers: h(currentUser), body: JSON.stringify(form) }).then(r => r.json());
+      if (r.success) {
+        setSubmitted(true);
+        setForm({ leave_type: 'casual', start_date: '', end_date: '', reason: '' });
+        setTimeout(() => setSubmitted(false), 3000);
+        load();
+      }
+    } catch {}
+    setSubmitting(false);
   };
 
+  const statusColors = { pending: 'yellow', approved: 'green', rejected: 'red', cancelled: 'gray' };
+
   return (
-    <ToolPage title="Leave Application" subtitle="Apply for leave" loading={loading}>
-      <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16, maxWidth: 500 }}>
+    <ToolPage title="Leave Application" subtitle="Apply for leave & view history" loading={loading}>
+      <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16, maxWidth: 520 }}>
         <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Apply for Leave</h3>
         <form onSubmit={handleApply}>
-          <FormField label="Leave Type" type="select" value={form.leave_type} onChange={f('leave_type')} options={['casual', 'medical', 'earned', 'maternity', 'paternity', 'unpaid'].map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} />
+          <FormField label="Leave Type" type="select" value={form.leave_type} onChange={f('leave_type')}
+            options={['casual', 'medical', 'earned', 'maternity', 'paternity', 'unpaid'].map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }))} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <FormField label="Start Date" type="date" value={form.start_date} onChange={f('start_date')} required />
             <FormField label="End Date" type="date" value={form.end_date} onChange={f('end_date')} required />
           </div>
           <FormField label="Reason" type="textarea" value={form.reason} onChange={f('reason')} placeholder="Reason for leave..." required />
-          <ActionBtn label="Submit Application" />
+          <ActionBtn label={submitted ? 'Submitted!' : submitting ? 'Submitting...' : 'Submit Application'} disabled={submitting} />
+          {submitted && <p style={{ color: '#10B981', fontSize: 12, marginTop: 8 }}>Leave application submitted successfully!</p>}
         </form>
       </div>
-      <DataTable title="Recent Leave Requests" headers={['Type', 'Start', 'End', 'Status']}
-        rows={myLeaves.slice(0, 5).map(l => [l.leave?.leave_type || 'N/A', l.leave?.start_date || 'N/A', l.leave?.end_date || 'N/A', <Badge text={l.leave?.status || 'N/A'} color={{ pending: 'yellow', approved: 'green', rejected: 'red' }[l.leave?.status] || 'gray'} />])}
+      <DataTable title="My Leave History" headers={['Type', 'Start Date', 'End Date', 'Status', 'Reason']}
+        rows={myLeaves.map(l => [
+          l.leave_type ? (l.leave_type.charAt(0).toUpperCase() + l.leave_type.slice(1)) : 'N/A',
+          l.start_date || 'N/A',
+          l.end_date || 'N/A',
+          <Badge text={l.status || 'N/A'} color={statusColors[l.status] || 'gray'} />,
+          l.reason ? l.reason.slice(0, 30) + (l.reason.length > 30 ? '...' : '') : 'N/A'
+        ])}
+        emptyMsg="No leave requests submitted yet"
       />
     </ToolPage>
   );
 }
 
-// 7. Lesson Plan Generator
+// 7. Lesson Plan Generator - FIXED (loads saved plans)
 export function LessonPlanGenerator() {
   const { currentUser } = useUser();
   const [subjects, setSubjects] = useState([]);
@@ -271,38 +377,76 @@ export function LessonPlanGenerator() {
   const [form, setForm] = useState({ class_id: '', subject_id: '', chapter: '', content: '' });
   const [showForm, setShowForm] = useState(false);
   const [classes, setClasses] = useState([]);
+  const [saving, setSaving] = useState(false);
   const f = k => v => setForm(p => ({ ...p, [k]: v }));
+
+  const loadPlans = async () => {
+    try {
+      const r = await fetch(`${API}/academics/lesson-plans`, { headers: h(currentUser) }).then(r => r.json());
+      if (r.success) setPlans(r.data || []);
+    } catch {}
+  };
 
   useEffect(() => {
     Promise.all([
       getAllClasses(currentUser).then(r => { if (r.success) setClasses(r.data || []); }),
       fetch(`${API}/academics/subjects`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setSubjects(r.data || []); }),
+      loadPlans(),
     ]).finally(() => setLoading(false));
   }, []);
 
   const create = async (e) => {
     e.preventDefault();
-    await fetch(`${API}/academics/lesson-plans`, { method: 'POST', headers: h(currentUser), body: JSON.stringify({ ...form, content: { description: form.content } }) }).catch(() => {});
-    setShowForm(false);
+    if (!form.chapter) return;
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/academics/lesson-plans`, {
+        method: 'POST', headers: h(currentUser),
+        body: JSON.stringify({ ...form, content: { description: form.content, topics: [], objectives: [] } })
+      }).then(r => r.json());
+      if (r.success) {
+        setShowForm(false);
+        setForm({ class_id: '', subject_id: '', chapter: '', content: '' });
+        await loadPlans();
+      }
+    } catch {}
+    setSaving(false);
   };
 
   return (
     <ToolPage title="Lesson Plan Generator" subtitle="Create structured lesson plans" loading={loading}
+      onRefresh={loadPlans}
       actions={<ActionBtn label="New Plan" onClick={() => setShowForm(true)} icon={<Plus size={11} />} />}>
       {showForm && (
         <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16 }}>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>New Lesson Plan</h3>
           <form onSubmit={create}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <FormField label="Class" type="select" value={form.class_id} onChange={f('class_id')} options={classes.map(c => ({ value: c.id, label: `${c.name}-${c.section}` }))} />
               <FormField label="Subject" type="select" value={form.subject_id} onChange={f('subject_id')} options={subjects.map(s => ({ value: s.id, label: s.name }))} />
-              <FormField label="Chapter" value={form.chapter} onChange={f('chapter')} placeholder="Chapter name/topic" required />
+              <FormField label="Chapter / Topic" value={form.chapter} onChange={f('chapter')} placeholder="Chapter name/topic" required />
             </div>
-            <FormField label="Lesson Notes / Content" type="textarea" value={form.content} onChange={f('content')} placeholder="Lesson plan details..." />
-            <div style={{ display: 'flex', gap: 8 }}><ActionBtn label="Save Plan" /><ActionBtn label="Cancel" variant="secondary" onClick={() => setShowForm(false)} /></div>
+            <FormField label="Lesson Notes / Content" type="textarea" value={form.content} onChange={f('content')} placeholder="Lesson plan details, objectives, activities..." />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <ActionBtn label={saving ? 'Saving...' : 'Save Plan'} disabled={saving} />
+              <ActionBtn label="Cancel" variant="secondary" onClick={() => setShowForm(false)} />
+            </div>
           </form>
         </div>
       )}
-      <div style={{ padding: 32, textAlign: 'center', color: '#64748B', background: '#161622', border: '1px solid #222230', borderRadius: 11, fontSize: 12 }}>No lesson plans yet. Create your first plan above.</div>
+      {plans.length === 0 ? (
+        <div style={{ padding: 28, textAlign: 'center', color: '#64748B', background: '#161622', border: '1px solid #222230', borderRadius: 11, fontSize: 12 }}>
+          No lesson plans yet. Create your first plan above.
+        </div>
+      ) : (
+        <DataTable title={`Lesson Plans (${plans.length})`} headers={['Chapter', 'Subject', 'Class', 'Created']}
+          rows={plans.map(p => {
+            const subj = subjects.find(s => s.id === p.subject_id);
+            const cls = classes.find(c => c.id === p.class_id);
+            return [p.chapter, subj?.name || 'N/A', cls ? `${cls.name}-${cls.section}` : 'N/A', p.created_at?.slice(0, 10) || 'N/A'];
+          })}
+        />
+      )}
     </ToolPage>
   );
 }

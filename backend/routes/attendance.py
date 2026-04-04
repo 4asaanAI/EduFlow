@@ -69,13 +69,14 @@ async def get_student_attendance(request: Request, class_id: str = None, student
 
 
 @router.get("/student/today/{class_id}")
-async def get_today_attendance(class_id: str, request: Request):
+async def get_today_attendance(class_id: str, request: Request, date: str = None):
     db = get_db()
     user = get_user(request)
-    today = date.today().strftime("%Y-%m-%d")
+    from datetime import date as dt
+    target_date = date if date else dt.today().strftime("%Y-%m-%d")
 
     students = await db.students.find({"class_id": class_id, "is_active": True}, {"_id": 0}).to_list(100)
-    attendance = await db.student_attendance.find({"class_id": class_id, "date": today}, {"_id": 0}).to_list(100)
+    attendance = await db.student_attendance.find({"class_id": class_id, "date": target_date}, {"_id": 0}).to_list(100)
     att_by_student = {a["student_id"]: a for a in attendance}
 
     result = []
@@ -88,7 +89,7 @@ async def get_today_attendance(class_id: str, request: Request):
             "status": att["status"] if att else "not_marked",
         })
 
-    return {"success": True, "data": result, "date": today, "class_id": class_id}
+    return {"success": True, "data": result, "date": target_date, "class_id": class_id}
 
 
 @router.post("/staff/bulk")

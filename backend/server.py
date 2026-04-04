@@ -41,6 +41,8 @@ app.include_router(tools_router)
 app.include_router(settings_router)
 app.include_router(academics_router)
 app.include_router(operations_router)
+app.include_router(search_router)
+app.include_router(notifications_router)
 
 
 @app.on_event("startup")

@@ -230,20 +230,43 @@ export function ResultViewer() {
 // 6. Practice Test Generator
 export function PracticeTest() { return <ComingSoon toolName="Practice Test Generator (Phase 4)" />; }
 
-// 7. Study Planner
+// 7. Study Planner - FIXED (saves to DB)
 export function StudyPlanner() {
+  const { currentUser } = useUser();
   const [plan, setPlan] = useState({ monday: '', tuesday: '', wednesday: '', thursday: '', friday: '', saturday: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const f = k => v => setPlan(p => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+    fetch(`${API}/ops/study-plan`, { headers: h(currentUser) }).then(r => r.json())
+      .then(r => { if (r.success && r.data) setPlan(r.data); })
+      .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/ops/study-plan`, { method: 'POST', headers: h(currentUser), body: JSON.stringify(plan) }).then(r => r.json());
+      if (r.success) { setSaved(true); setTimeout(() => setSaved(false), 3000); }
+    } catch {}
+    setSaving(false);
+  };
+
+  if (loading) return <ToolPage title="Study Planner" subtitle="Plan your week"><div style={{ color: '#64748B', fontSize: 13 }}>Loading...</div></ToolPage>;
+
   return (
     <ToolPage title="Study Planner" subtitle="Plan your weekly study schedule">
       <div style={{ maxWidth: 600 }}>
-        <p style={{ color: '#64748B', fontSize: 12, marginBottom: 16 }}>Plan your study schedule for the week. This is saved locally.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {Object.keys(plan).map(day => (
-            <FormField key={day} label={day.charAt(0).toUpperCase() + day.slice(1)} value={plan[day]} onChange={f(day)} placeholder={`What will you study on ${day}?`} type="textarea" />
+        <p style={{ color: '#64748B', fontSize: 12, marginBottom: 16 }}>Set your study goals for each day of the week. Your plan is saved automatically.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          {Object.keys(plan).filter(k => k !== 'user_id' && k !== 'updated_at').map(day => (
+            <FormField key={day} label={day.charAt(0).toUpperCase() + day.slice(1)} value={plan[day] || ''} onChange={f(day)}
+              placeholder={`e.g. Maths Chapter 5, Physics revision`} type="textarea" />
           ))}
         </div>
-        <ActionBtn label="Save My Plan" onClick={() => { localStorage.setItem('study-plan', JSON.stringify(plan)); alert('Study plan saved!'); }} />
+        <ActionBtn label={saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save My Plan'} onClick={handleSave} disabled={saving} />
       </div>
     </ToolPage>
   );

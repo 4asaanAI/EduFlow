@@ -4,28 +4,23 @@ import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ChatInterface from './ChatInterface';
-import { createConversation } from '../lib/api';
+import { createConversation, getConversations } from '../lib/api';
 import ProfileModal from './ProfileModal';
 import SettingsModal from './SettingsModal';
 
-// Dynamic tool component loader
-const TOOL_MAP = {};
 const loadTool = async (toolId) => {
   const OWNERS = ['school-pulse','fee-collection','student-strength','attendance-overview','staff-attendance-tracker','financial-reports','announcement-broadcaster','admission-funnel','staff-leave-manager','staff-performance','ai-health-report','smart-alerts','expense-tracker','complaint-tracker','custom-report-builder','board-report'];
   const ADMINS = ['student-database','fee-tracker','attendance-recorder','certificate-generator','circular-sender','enquiry-register','document-scanner','smart-fee-defaulter','admission-pipeline','parent-message','student-transfer','id-card-generator','timetable-builder','asset-tracker','visitor-log','transport-manager','automated-report','custom-form-builder','payroll-preparer'];
   const TEACHERS = ['class-attendance-marker','assignment-generator','question-paper-creator','report-card-builder','student-performance-viewer','leave-application','lesson-plan-generator','worksheet-creator','class-performance-analytics','substitution-viewer','ptm-notes','curriculum-tracker'];
   const STUDENTS = ['ai-tutor','doubt-solver','homework-viewer','attendance-self-check','result-viewer','practice-test','study-planner','career-guidance','fee-status-viewer','ptm-summary-viewer'];
 
-  if (OWNERS.includes(toolId)) return (await import('./tools/OwnerTools'))[toolIdToComp(toolId)];
-  if (ADMINS.includes(toolId)) return (await import('./tools/AdminTools'))[toolIdToComp(toolId)];
-  if (TEACHERS.includes(toolId)) return (await import('./tools/TeacherTools'))[toolIdToComp(toolId)];
-  if (STUDENTS.includes(toolId)) return (await import('./tools/StudentTools'))[toolIdToComp(toolId)];
+  const toComp = (id) => id.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join('');
+  if (OWNERS.includes(toolId)) return (await import('./tools/OwnerTools'))[toComp(toolId)];
+  if (ADMINS.includes(toolId)) return (await import('./tools/AdminTools'))[toComp(toolId)];
+  if (TEACHERS.includes(toolId)) return (await import('./tools/TeacherTools'))[toComp(toolId)];
+  if (STUDENTS.includes(toolId)) return (await import('./tools/StudentTools'))[toComp(toolId)];
   return null;
 };
-
-function toolIdToComp(id) {
-  return id.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join('');
-}
 
 function ToolView({ toolId }) {
   const [Comp, setComp] = useState(null);
@@ -33,7 +28,7 @@ function ToolView({ toolId }) {
     loadTool(toolId).then(C => setComp(() => C || null));
   }, [toolId]);
   if (!Comp) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748B', flexDirection: 'column', gap: 12 }}>
       <div className="spinner" />
       <span>Loading tool...</span>
     </div>
@@ -46,6 +41,7 @@ export default function Layout() {
   const { isDark } = useTheme();
   const [activeTool, setActiveTool] = useState(null);
   const [activeConvId, setActiveConvId] = useState(null);
+  const [activeConvTitle, setActiveConvTitle] = useState('');
   const [convRefresh, setConvRefresh] = useState(0);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -56,38 +52,68 @@ export default function Layout() {
     const res = await createConversation(currentUser);
     if (res.success) {
       setActiveConvId(res.data.id);
+      setActiveConvTitle('');
       setConvRefresh(n => n + 1);
     }
   };
 
   const handleSelectTool = (toolId) => setActiveTool(toolId);
-  const handleSelectConv = (convId) => { setActiveTool(null); setActiveConvId(convId); };
-  const handleConvCreated = (convId) => { setActiveConvId(convId); setConvRefresh(n => n + 1); };
+
+  const handleSelectConv = async (convId) => {
+    setActiveTool(null);
+    setActiveConvId(convId);
+    // Find conv title
+    try {
+      const res = await getConversations(currentUser);
+      const conv = res.data?.find(c => c.id === convId);
+      setActiveConvTitle(conv?.title || '');
+    } catch {}
+  };
+
+  const handleConvCreated = (convId) => {
+    setActiveConvId(convId);
+    setConvRefresh(n => n + 1);
+  };
 
   // Listen for tool open events from Quick Actions
   useEffect(() => {
-    const handler = (e) => { if (e.detail) { setActiveTool(e.detail); setActiveConvId(null); } };
+    const handler = (e) => { if (e.detail) { setActiveTool(e.detail); } };
     window.addEventListener('open-tool', handler);
     return () => window.removeEventListener('open-tool', handler);
   }, []);
 
-  // Reset tool + conversation when user switches role
+  // Reset on role switch
   useEffect(() => {
     setActiveTool(null);
     setActiveConvId(null);
+    setActiveConvTitle('');
   }, [currentUser.id]);
+
+  // Mobile: close sidebar when clicking outside (only on mobile)
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (window.innerWidth <= 768 && sidebarOpen) {
+        const sidebar = document.querySelector('.sidebar-wrapper');
+        const menuBtn = document.querySelector('[data-testid="main-header"] button');
+        if (sidebar && !sidebar.contains(e.target)) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+    // Only add listener, don't auto-close on desktop
+    if (window.innerWidth <= 768) {
+      document.addEventListener('mousedown', handleClick);
+    }
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [sidebarOpen]);
 
   const bg = isDark ? '#0A0A0F' : '#F8F9FC';
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: bg, overflow: 'hidden' }}>
-      {/* Mobile menu overlay */}
-      {!sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(true)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 39, display: 'none' }}
-          className="mobile-overlay"
-        />
+      {/* Mobile overlay — only on mobile */}
+      {sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 39, display: 'none' }} className="mobile-overlay" />
       )}
 
       <Sidebar
@@ -104,6 +130,7 @@ export default function Layout() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         <Header
           activeTool={activeTool}
+          activeConvTitle={activeConvTitle}
           onBackToChat={() => setActiveTool(null)}
           onOpenProfile={() => setShowProfile(true)}
           onOpenSettings={() => setShowSettings(true)}
@@ -115,6 +142,7 @@ export default function Layout() {
           ) : (
             <ChatInterface
               activeConvId={activeConvId}
+              activeConvTitle={activeConvTitle}
               onConvCreated={handleConvCreated}
             />
           )}
