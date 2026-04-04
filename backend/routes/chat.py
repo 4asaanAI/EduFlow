@@ -206,15 +206,22 @@ async def _generate_chat_sse(conv_id: str, user_text: str, user: dict):
                     except Exception as e:
                         tool_result = {"error": str(e)}
 
-                    # Second LLM pass
-                    tool_msg = f"Tool '{tool_name}' data:\n{json.dumps(tool_result, ensure_ascii=False, indent=2)}\n\nNow format this into a helpful response."
+                    # Second LLM pass — provide data, ask for formatted response
+                    # IMPORTANT: Strip any JSON from previous response to prevent it showing to user
+                    tool_msg = f"Tool '{tool_name}' data:\n{json.dumps(tool_result, ensure_ascii=False, indent=2)}\n\nNow provide a comprehensive, well-formatted natural language response. Do NOT output any JSON tool calls."
                     messages_for_llm_final = messages_for_llm[:-1] + [
                         {"role": "user", "content": user_text},
-                        {"role": "assistant", "content": llm_response},
+                        {"role": "assistant", "content": "Fetching data..."},
                         {"role": "user", "content": tool_msg},
                     ]
                     session_id_2 = f"{conv_id}-{uuid.uuid4()}"
                     llm_response = await llm_client.chat(system_prompt, messages_for_llm_final, session_id_2)
+
+        # Strip any residual JSON tool call patterns from final response (safety net)
+        llm_response = re.sub(
+            r'\{"action"\s*:\s*"[^"]+"\s*,\s*"params"\s*:\s*\{[^}]*\}\s*\}',
+            '', llm_response
+        ).strip()
 
         # 8. Parse rich content from final response
         clean_text, rich_content = _extract_rich_content(llm_response)
@@ -268,3 +275,39 @@ async def send_message(conv_id: str, request: Request):
             "Connection": "keep-alive",
         },
     )
+
+
+@router.post("/conversations/{conv_id}/action")
+async def execute_action(conv_id: str, request: Request):
+    """Execute an action button directly (not through LLM) and add result to chat."""
+    db = get_db()
+    user = get_current_user(request)
+    body = await request.json()
+    action = body.get("action")
+    params = body.get("params", {})
+    label = body.get("label", action)
+
+    tool_def = TOOL_REGISTRY.get(action)
+    if not tool_def:
+        return {"success": False, "error": f"Unknown action: {action}"}
+    if user["role"] not in tool_def["roles"]:
+        return {"success": False, "error": "Not allowed for your role"}
+
+    try:
+        result = await tool_def["fn"](params, user)
+        msg_content = result.get("message", f"Action '{label}' completed successfully.")
+
+        # Save as AI message
+        ai_msg = Message(
+            conversation_id=conv_id,
+            role="assistant",
+            content=msg_content,
+            tool_calls=[{"tool": action, "params": params, "result": result}],
+            language_detected="en",
+        )
+        await db.messages.insert_one({**ai_msg.dict(), "_id": ai_msg.id})
+        await db.conversations.update_one({"id": conv_id}, {"$set": {"updated_at": datetime.now().isoformat()}})
+
+        return {"success": True, "data": {"message": msg_content, "result": result, "message_id": ai_msg.id}}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

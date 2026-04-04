@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { UserProvider, useUser } from './contexts/UserContext';
-import Layout from './components/Layout';
 import './App.css';
-
-function AppInner() {
-  return <Layout />;
-}
+import './theme.css';
+import { UserProvider } from './contexts/UserContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import Layout from './components/Layout';
 
 export default function App() {
   return (
-    <UserProvider>
-      <AppInner />
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <Layout />
+      </UserProvider>
+    </ThemeProvider>
   );
 }

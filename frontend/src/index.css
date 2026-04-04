@@ -90,3 +90,13 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
 
 /* Skeleton shimmer */
 .skeleton { background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-popover) 50%, var(--bg-card) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: flex !important; }
+  .mobile-close { display: flex !important; }
+  .hide-mobile { display: none !important; }
+}
+@media (min-width: 769px) {
+  .mobile-menu-btn { display: none !important; }
+}

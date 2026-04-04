@@ -16,6 +16,8 @@ from routes.fees import router as fees_router
 from routes.attendance import router as attendance_router
 from routes.tools import router as tools_router
 from routes.settings import router as settings_router
+from routes.academics import router as academics_router
+from routes.operations import router as operations_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -37,6 +39,8 @@ app.include_router(fees_router)
 app.include_router(attendance_router)
 app.include_router(tools_router)
 app.include_router(settings_router)
+app.include_router(academics_router)
+app.include_router(operations_router)
 
 
 @app.on_event("startup")

@@ -192,7 +192,7 @@ function ActionButtons({ buttons, onActionButton }) {
         <button
           key={i}
           data-testid={`action-btn-${btn.action || i}`}
-          onClick={() => onActionButton && onActionButton(btn.action, btn.params || {})}
+          onClick={() => onActionButton && onActionButton(btn.action, btn.params || {}, btn.label)}
           style={{
             background: '#161622',
             border: '1px solid #3B82F6',

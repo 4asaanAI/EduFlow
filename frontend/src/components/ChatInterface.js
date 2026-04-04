@@ -1,27 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   getConversations, createConversation, getMessages, sendMessageStream,
   updateConversation, deleteConversation,
 } from '../lib/api';
 import MessageRenderer from './MessageRenderer';
 import InputBar from './InputBar';
-import { MessageSquare, Sparkles } from 'lucide-react';
 
-function TypingIndicator() {
+const API = process.env.REACT_APP_BACKEND_URL + '/api';
+
+function getHeaders(user) {
+  return { 'Content-Type': 'application/json', 'X-User-Role': user?.role || 'owner', 'X-User-Id': user?.id || 'user-owner-001', 'X-User-Name': user?.name || 'Aman' };
+}
+
+async function executeAction(convId, action, params, label, user) {
+  const res = await fetch(`${API}/chat/conversations/${convId}/action`, {
+    method: 'POST', headers: getHeaders(user),
+    body: JSON.stringify({ action, params, label }),
+  });
+  return res.json();
+}
+
+function TypingIndicator({ isDark }) {
   return (
     <div style={{ display: 'flex', gap: 12, padding: '8px 0', alignItems: 'flex-start' }}>
-      <div style={{
-        width: 30, height: 30, borderRadius: 8,
-        background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 13, color: '#818CF8',
-        flexShrink: 0,
-      }}>E</div>
+      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 13, color: '#818CF8', flexShrink: 0 }}>E</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 6 }}>
-        <div className="typing-dot" />
-        <div className="typing-dot" />
-        <div className="typing-dot" />
+        <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
       </div>
     </div>
   );
@@ -29,16 +35,8 @@ function TypingIndicator() {
 
 function ToolCallBadge({ tool, status }) {
   return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
-      borderRadius: 6, padding: '3px 8px', fontSize: 11, color: '#93C5FD', marginBottom: 8,
-    }}>
-      {status === 'running' ? (
-        <div className="spinner" style={{ width: 10, height: 10 }} />
-      ) : (
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
-      )}
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 6, padding: '3px 8px', fontSize: 11, color: '#93C5FD', marginBottom: 8 }}>
+      {status === 'running' ? <div className="spinner" style={{ width: 10, height: 10 }} /> : <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />}
       <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{tool}</span>
       <span style={{ color: '#64748B' }}>{status === 'running' ? '...' : 'done'}</span>
     </div>
@@ -61,14 +59,15 @@ export default function ChatInterface({ activeConvId, onConvCreated }) {
     }
   }, [activeConvId]);
 
-  // Load messages when conversation changes
+  // Load messages when conversation changes OR user switches role  
   useEffect(() => {
     if (convId) {
+      setMessages([]);
       loadMessages(convId);
     } else {
       setMessages([]);
     }
-  }, [convId]);
+  }, [convId, currentUser.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -146,82 +145,51 @@ export default function ChatInterface({ activeConvId, onConvCreated }) {
     }
   };
 
-  const handleActionButton = async (action, params) => {
-    const text = `Please execute: ${action} with params: ${JSON.stringify(params)}`;
-    handleSend(text);
+  const handleActionButton = async (action, params, label) => {
+    if (!convId) return;
+    try {
+      const actionIndicator = { id: `act-${Date.now()}`, role: 'user', content: `▶ ${label || action}`, isAction: true, created_at: new Date().toISOString() };
+      setMessages(prev => [...prev, actionIndicator]);
+      const res = await executeAction(convId, action, params, label, currentUser);
+      if (res.success) {
+        const resultMsg = { id: `res-${Date.now()}`, role: 'assistant', content: res.data?.message || 'Done.', created_at: new Date().toISOString() };
+        setMessages(prev => [...prev, resultMsg]);
+      }
+    } catch {}
   };
 
   const isNewChat = !convId || messages.length === 0;
+  const bg = '#0A0A0F'; // always dark for chat area for now
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: '#0A0A0F' }}>
-      {/* Messages area */}
-      <div
-        data-testid="messages-area"
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '24px 0 180px',
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: bg }}>
+      <div data-testid="messages-area" style={{ flex: 1, overflowY: 'auto', padding: '24px 0 180px' }}>
         <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 24px' }}>
-
-          {/* Welcome state */}
           {isNewChat && (
             <div className="fade-in" style={{ textAlign: 'center', padding: '60px 0 40px' }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 14,
-                background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 20px',
-                fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 24, color: '#818CF8',
-              }}>E</div>
+              <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 24, color: '#818CF8' }}>E</div>
               <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 8 }}>
                 Hello {currentUser.name}! What can I assist you with today?
               </h2>
               <p style={{ color: '#64748B', fontSize: 13, maxWidth: 400, margin: '0 auto 32px' }}>
                 Ask me anything about your school, or type / to use a specific tool.
               </p>
-
-              {/* Suggested prompts */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 600, margin: '0 auto' }}>
                 {getSuggestedPrompts(currentUser.role).map((prompt, i) => (
-                  <button
-                    key={i}
-                    data-testid={`suggested-prompt-${i}`}
-                    onClick={() => handleSend(prompt)}
-                    style={{
-                      background: '#161622',
-                      border: '1px solid #222230',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      color: '#94A3B8',
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      textAlign: 'left',
-                    }}
+                  <button key={i} data-testid={`suggested-prompt-${i}`} onClick={() => handleSend(prompt)}
+                    style={{ background: '#161622', border: '1px solid #222230', borderRadius: 8, padding: '8px 14px', color: '#94A3B8', fontSize: 12, cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#1C1C28'; e.currentTarget.style.color = '#E2E8F0'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = '#161622'; e.currentTarget.style.color = '#94A3B8'; }}
-                  >
-                    {prompt}
-                  </button>
+                  >{prompt}</button>
                 ))}
               </div>
             </div>
           )}
-
-          {/* Message list */}
           {messages.map((msg, idx) => (
             <div key={msg.id || idx} className="fade-in">
-              <MessageRenderer
-                message={msg}
-                onActionButton={handleActionButton}
-              />
+              <MessageRenderer message={msg} onActionButton={handleActionButton} />
             </div>
           ))}
-
-          {/* Streaming message */}
           {streaming && currentStreamMsg && (
             <div className="fade-in">
               {currentStreamMsg.toolCall && (
@@ -230,22 +198,15 @@ export default function ChatInterface({ activeConvId, onConvCreated }) {
                 </div>
               )}
               {currentStreamMsg.content ? (
-                <MessageRenderer
-                  message={{ ...currentStreamMsg, role: 'assistant' }}
-                  isStreaming
-                  onActionButton={handleActionButton}
-                />
+                <MessageRenderer message={{ ...currentStreamMsg, role: 'assistant' }} isStreaming onActionButton={handleActionButton} />
               ) : (
                 <TypingIndicator />
               )}
             </div>
           )}
-
           <div ref={messagesEndRef} />
         </div>
       </div>
-
-      {/* Input bar */}
       <InputBar onSend={handleSend} disabled={streaming} />
     </div>
   );
