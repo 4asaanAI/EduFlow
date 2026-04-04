@@ -198,12 +198,16 @@ export default function ChatInterface({ activeConvId, activeConvTitle, onConvCre
   };
 
   const isNewChat = !convId || messages.length === 0;
+  const chatBg = isDark ? '#0A0A0F' : '#F8F9FC';
+  const titleBorder = isDark ? '#1A1A24' : '#F1F5F9';
+  const titleColor = isDark ? '#64748B' : '#94A3B8';
+  const greetColor = isDark ? '#fff' : '#0F172A';
+  const greetSub = isDark ? '#64748B' : '#94A3B8';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: '#0A0A0F' }}>
-      {/* Conversation title bar */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: chatBg }}>
       {activeConvTitle && !isNewChat && (
-        <div style={{ padding: '8px 24px', borderBottom: '1px solid #1A1A24', fontSize: 12, color: '#64748B', fontWeight: 500, background: '#0A0A0F', flexShrink: 0 }}>
+        <div style={{ padding: '7px 24px', borderBottom: `1px solid ${titleBorder}`, fontSize: 11, color: titleColor, fontWeight: 500, background: chatBg, flexShrink: 0 }}>
           {activeConvTitle}
         </div>
       )}
@@ -212,10 +216,10 @@ export default function ChatInterface({ activeConvId, activeConvTitle, onConvCre
         <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 24px' }}>
           {isNewChat && (
             <div className="fade-in" style={{ textAlign: 'center', padding: '48px 0 32px' }}>
-              <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 8 }}>
+              <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 22, fontWeight: 600, color: greetColor, marginBottom: 8 }}>
                 Hello {currentUser.name}!
               </h2>
-              <p style={{ color: '#64748B', fontSize: 13, marginBottom: 24 }}>
+              <p style={{ color: greetSub, fontSize: 13, marginBottom: 24 }}>
                 What can I assist you with today?
               </p>
               <HealthScoreWidget user={currentUser} />
@@ -238,14 +242,14 @@ export default function ChatInterface({ activeConvId, activeConvTitle, onConvCre
               {currentStreamMsg.content ? (
                 <MessageRenderer message={{ ...currentStreamMsg, role: 'assistant' }} isStreaming onActionButton={handleActionButton} />
               ) : (
-                <TypingIndicator />
+                <TypingIndicator isDark={isDark} />
               )}
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <InputBar onSend={handleSend} disabled={streaming} />
+      <InputBar onSend={handleSend} disabled={streaming} isDark={isDark} />
     </div>
   );
 }

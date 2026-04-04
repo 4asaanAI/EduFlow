@@ -101,16 +101,30 @@ def _parse_tool_call(text: str):
 
 # Keyword-based tool detection for reliable intent routing
 KEYWORD_TOOL_MAP = [
-    (["school status", "school pulse", "today's status", "today's overview", "school overview", "how is school", "pulse"], "get_school_pulse"),
-    (["fee defaulter", "fee summary", "fee collection", "who owes", "overdue fee", "pending fee", "collect fee"], "get_fee_summary"),
-    (["staff absent", "staff status", "staff tracker", "who is absent", "which staff", "staff attendance", "leave request", "pending leave"], "get_staff_status"),
-    (["attendance trend", "attendance overview", "attendance report", "how is attendance"], "get_attendance_overview"),
-    (["smart alert", "active alert", "flag", "exception"], "get_smart_alerts"),
-    (["financial report", "financial summary", "revenue", "expense"], "get_financial_report"),
-    (["search student", "find student", "student named", "student list", "which student"], "search_students"),
-    (["fee transaction", "payment history", "who paid", "payment record"], "get_fee_transactions"),
-    (["approve leave", "reject leave"], "approve_leave"),
-    (["enquiry", "admission funnel", "new student inquiry"], "get_enquiries"),
+    # School pulse - with slash variants
+    (["/school-pulse", "school status", "school pulse", "today's status", "today's overview", "school overview", "how is school", "pulse", "aaj ka status", "school ka status"], "get_school_pulse"),
+    # Daily brief
+    (["/daily-brief", "daily brief", "morning summary", "morning brief", "aaj ka haal", "morning status", "what happened today", "today's summary"], "get_daily_brief"),
+    # Fee collection
+    (["/fee-collection", "/fee-summary", "fee defaulter", "fee summary", "fee collection", "who owes", "overdue fee", "pending fee", "collect fee", "fee ke baare mein"], "get_fee_summary"),
+    # Staff status
+    (["/staff-tracker", "/leave-manager", "staff absent", "staff status", "staff tracker", "who is absent", "which staff", "staff attendance", "leave request", "pending leave", "staff ki leave"], "get_staff_status"),
+    # Attendance
+    (["/attendance-overview", "attendance trend", "attendance overview", "attendance report", "how is attendance", "attendance kaisi hai"], "get_attendance_overview"),
+    # Alerts
+    (["/smart-alerts", "smart alert", "active alert", "flag", "exception", "koi dikkat"], "get_smart_alerts"),
+    # Financial
+    (["/financial-reports", "financial report", "financial summary", "revenue", "expense", "paisa", "finance"], "get_financial_report"),
+    # Students
+    (["/student-database", "search student", "find student", "student named", "student list", "which student", "student dhundo"], "search_students"),
+    # Fee transactions
+    (["/fee-tracker", "fee transaction", "payment history", "who paid", "payment record"], "get_fee_transactions"),
+    # Leave approval
+    (["approve leave", "reject leave", "leave approve"], "approve_leave"),
+    # Enquiries
+    (["/admission-funnel", "/enquiry-register", "enquiry", "admission funnel", "new student inquiry", "admission"], "get_enquiries"),
+    # Health report
+    (["/health-report", "/ai-health-report", "health report", "school health", "health score"], "get_smart_alerts"),
 ]
 
 

@@ -39,8 +39,16 @@ function SearchPanel({ user, onClose, isDark }) {
 
   const typeColors = { tool: '#8B5CF6', student: '#3B82F6', staff: '#10B981', announcement: '#EAB308' };
 
+  const handleResultClick = (r) => {
+    onClose();
+    if (r.type === 'tool') window.dispatchEvent(new CustomEvent('open-tool', { detail: r.id }));
+    else if (r.type === 'student') window.dispatchEvent(new CustomEvent('open-tool', { detail: 'student-database' }));
+    else if (r.type === 'staff') window.dispatchEvent(new CustomEvent('open-tool', { detail: 'staff-attendance-tracker' }));
+    else if (r.type === 'announcement') window.dispatchEvent(new CustomEvent('open-tool', { detail: 'announcement-broadcaster' }));
+  };
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 80 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 70 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
       <div style={{ position: 'relative', width: 560, background: bg, border: `1px solid ${border}`, borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', gap: 10, borderBottom: `1px solid ${border}` }}>
@@ -53,16 +61,17 @@ function SearchPanel({ user, onClose, isDark }) {
         {results.length > 0 && (
           <div style={{ maxHeight: 400, overflowY: 'auto', padding: 8 }}>
             {results.map((r, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer' }}
+              <div key={i} onClick={() => handleResultClick(r)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <div style={{ width: 28, height: 28, borderRadius: 7, background: `${typeColors[r.type] || '#64748B'}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: typeColors[r.type] || '#64748B', fontWeight: 700 }}>
                   {r.type?.[0]?.toUpperCase()}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: text }}>{r.name || r.title}</div>
                   <div style={{ fontSize: 11, color: muted }}>{r.subtitle || r.type}</div>
                 </div>
+                <span style={{ fontSize: 10, color: muted, background: `${typeColors[r.type] || '#64748B'}15`, padding: '2px 6px', borderRadius: 4 }}>{r.type}</span>
               </div>
             ))}
           </div>
@@ -71,7 +80,7 @@ function SearchPanel({ user, onClose, isDark }) {
           <div style={{ padding: 24, textAlign: 'center', color: muted, fontSize: 13 }}>No results for "{query}"</div>
         )}
         {!query && (
-          <div style={{ padding: '16px 16px 12px' }}>
+          <div style={{ padding: '16px' }}>
             <div style={{ fontSize: 10, color: muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Quick Tips</div>
             <div style={{ fontSize: 12, color: muted }}>Search for students, staff, tools, or announcements. Results are scoped to your role.</div>
           </div>
@@ -97,6 +106,20 @@ function NotificationsPanel({ user, onClose, isDark }) {
   const muted = isDark ? '#64748B' : '#94A3B8';
   const typeColors = { info: '#3B82F6', warning: '#F59E0B', success: '#10B981', error: '#EF4444' };
 
+  const handleNotifClick = (n) => {
+    onClose();
+    const routeMap = {
+      'Pending Leave Requests': 'staff-leave-manager',
+      'Fee Overdue': 'fee-collection',
+      'Leave Status': 'leave-application',
+      'Low Attendance': 'attendance-self-check',
+      'Fee Due': 'fee-status-viewer',
+      'Announcement': 'announcement-broadcaster',
+    };
+    const tool = routeMap[n.title];
+    if (tool) window.dispatchEvent(new CustomEvent('open-tool', { detail: tool }));
+  };
+
   return (
     <div style={{ position: 'absolute', top: '110%', right: 0, width: 320, background: bg, border: `1px solid ${border}`, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', zIndex: 100, overflow: 'hidden' }}>
       <div style={{ padding: '12px 14px', borderBottom: `1px solid ${border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -110,7 +133,9 @@ function NotificationsPanel({ user, onClose, isDark }) {
           <div style={{ padding: 24, textAlign: 'center', color: muted, fontSize: 12 }}>No new notifications</div>
         ) : (
           notifications.map((n, i) => (
-            <div key={i} style={{ padding: '10px 14px', borderBottom: i < notifications.length - 1 ? `1px solid ${border}` : 'none', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <div key={i} onClick={() => handleNotifClick(n)} style={{ padding: '10px 14px', borderBottom: i < notifications.length - 1 ? `1px solid ${border}` : 'none', display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: typeColors[n.type] || '#64748B', marginTop: 5, flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 12, color: text, fontWeight: 500 }}>{n.title}</div>

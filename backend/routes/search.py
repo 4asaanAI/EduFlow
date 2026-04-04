@@ -71,20 +71,41 @@ async def search(request: Request, q: str = "", type: str = "all"):
 
     # Search persons (role-scoped)
     if type in ["all", "persons", "students"] and role in ["owner", "admin", "teacher"]:
-        students = await db.students.find(
-            {"$or": [{"name": {"$regex": q, "$options": "i"}}, {"admission_number": {"$regex": q, "$options": "i"}}], "is_active": True},
-            {"_id": 0, "id": 1, "name": 1, "admission_number": 1, "class_id": 1}
-        ).to_list(10)
+        student_query = {"$or": [{"name": {"$regex": q, "$options": "i"}}, {"admission_number": {"$regex": q, "$options": "i"}}], "is_active": True}
+        # Teacher: only see their own class students
+        if role == "teacher":
+            import os
+            # Get teacher's classes (via user_id → staff → class_teacher_id)
+            pass  # For now show all (scope later with real auth)
+        students = await db.students.find(student_query, {"_id": 0, "id": 1, "name": 1, "admission_number": 1, "class_id": 1}).to_list(10)
         for s in students:
-            results.append({"id": s["id"], "name": s["name"], "subtitle": s.get("admission_number", ""), "type": "student"})
+            cls = await db.classes.find_one({"id": s.get("class_id")}, {"_id": 0})
+            sub_role = f"{cls['name']}-{cls['section']}" if cls else "Student"
+            results.append({"id": s["id"], "name": s["name"], "subtitle": sub_role, "type": "student", "role": "student", "sub_role": sub_role})
 
     if type in ["all", "persons", "staff"] and role in ["owner", "admin"]:
         staff = await db.staff.find(
             {"name": {"$regex": q, "$options": "i"}, "is_active": True},
-            {"_id": 0, "id": 1, "name": 1, "staff_type": 1}
-        ).to_list(5)
+            {"_id": 0, "id": 1, "name": 1, "staff_type": 1, "department": 1, "specialization": 1}
+        ).to_list(8)
         for s in staff:
-            results.append({"id": s["id"], "name": s["name"], "subtitle": s.get("staff_type", ""), "type": "staff", "role": s.get("staff_type")})
+            # Build sub_role based on staff_type
+            st = s.get("staff_type", "")
+            dept = s.get("department", "")
+            spec = s.get("specialization", "")
+            if st == "teacher":
+                sub_role = f"Teacher{' · ' + spec if spec else ''}"
+            elif st == "principal":
+                sub_role = "Principal"
+            elif st == "accountant":
+                sub_role = "Accounts Dept"
+            elif st in ["peon", "aaya", "sweeper", "guard", "gardner"]:
+                sub_role = f"Support Staff · {st.capitalize()}"
+            elif st in ["receptionist", "medical", "admission"]:
+                sub_role = f"Admin Dept · {st.capitalize()}"
+            else:
+                sub_role = f"{dept or st}".capitalize()
+            results.append({"id": s["id"], "name": s["name"], "subtitle": sub_role, "type": "staff", "role": st, "sub_role": sub_role})
 
     # Search announcements
     if type in ["all", "announcements"]:

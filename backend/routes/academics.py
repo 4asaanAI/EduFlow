@@ -262,6 +262,49 @@ async def create_ptm_note(request: Request):
     return {"success": True, "data": note}
 
 
+@router.get("/worksheets")
+async def list_worksheets(request: Request):
+    db = get_db()
+    user = get_user(request)
+    query = {}
+    if user["role"] == "teacher":
+        query["teacher_id"] = user["id"]
+    elif user["role"] == "student":
+        own = await db.students.find_one({"user_id": user["id"]})
+        if own:
+            query["class_id"] = own["class_id"]
+    worksheets = await db.worksheets.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"success": True, "data": worksheets}
+
+
+@router.post("/worksheets")
+async def create_worksheet(request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["teacher", "admin"]:
+        raise HTTPException(403, "Forbidden")
+    body = await request.json()
+    ws = {
+        "id": str(uuid.uuid4()),
+        "teacher_id": user["id"],
+        "subject_id": body.get("subject_id"),
+        "topic": body.get("topic"),
+        "type": body.get("type", "practice"),
+        "content": body.get("content", ""),
+        "is_ai_blocked": False,
+        "created_at": datetime.now().isoformat(),
+    }
+    await db.worksheets.insert_one({**ws, "_id": ws["id"]})
+    return {"success": True, "data": ws}
+
+
+@router.get("/substitutions")
+async def list_substitutions(request: Request):
+    db = get_db()
+    # Return empty for now — substitutions are managed manually
+    return {"success": True, "data": []}
+
+
 # --- Curriculum Progress ---
 @router.get("/curriculum")
 async def list_curriculum(request: Request, class_id: str = None, subject_id: str = None):

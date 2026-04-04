@@ -595,6 +595,124 @@ export function TransportManager() {
     </ToolPage>
   );
 }
-export function AutomatedReport() { return <ComingSoon toolName="Automated Report Generator (Phase 3)" />; }
-export function CustomFormBuilder() { return <ComingSoon toolName="Custom Form Builder (Phase 4)" />; }
-export function PayrollPreparer() { return <ComingSoon toolName="Payroll Data Preparer (Phase 4)" />; }
+export function AutomatedReport() {
+  const { currentUser } = useUser();
+  const [schedules, setSchedules] = useState([{ name: 'Weekly Attendance Report', frequency: 'weekly', day: 'Monday', time: '08:00', active: true }, { name: 'Monthly Fee Summary', frequency: 'monthly', day: '1', time: '09:00', active: true }]);
+  return (
+    <ToolPage title="Automated Reports" subtitle="Schedule recurring reports">
+      <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16, maxWidth: 600 }}>
+        <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Scheduled Reports</h3>
+        {schedules.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #1A1A24' }}>
+            <div>
+              <div style={{ fontSize: 13, color: '#E2E8F0', fontWeight: 500 }}>{s.name}</div>
+              <div style={{ fontSize: 11, color: '#64748B' }}>{s.frequency} · {s.day} at {s.time}</div>
+            </div>
+            <Badge text={s.active ? 'Active' : 'Paused'} color={s.active ? 'green' : 'gray'} />
+          </div>
+        ))}
+        <div style={{ marginTop: 14 }}>
+          <p style={{ fontSize: 11, color: '#64748B' }}>Full scheduling system with email delivery coming in Phase 3. Reports are available via Export section.</p>
+        </div>
+      </div>
+    </ToolPage>
+  );
+}
+
+export function CustomFormBuilder() {
+  const { currentUser } = useUser();
+  const [forms, setForms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [audience, setAudience] = useState('all');
+  const [fields, setFields] = useState([{ label: '', type: 'text' }]);
+
+  useEffect(() => {
+    fetch(`${API}/settings/forms`, { headers: h(currentUser) }).then(r => r.json())
+      .then(r => { if (r.success) setForms(r.data || []); }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const addField = () => setFields(p => [...p, { label: '', type: 'text' }]);
+  const updateField = (i, key, val) => setFields(p => p.map((f, idx) => idx === i ? { ...f, [key]: val } : f));
+
+  const save = async () => {
+    if (!formName) return;
+    await fetch(`${API}/settings/forms`, { method: 'POST', headers: h(currentUser), body: JSON.stringify({ title: formName, audience, fields: fields.filter(f => f.label) }) });
+    setShowCreate(false); setFormName(''); setFields([{ label: '', type: 'text' }]);
+    const r = await fetch(`${API}/settings/forms`, { headers: h(currentUser) }).then(r => r.json());
+    if (r.success) setForms(r.data || []);
+  };
+
+  return (
+    <ToolPage title="Custom Form Builder" subtitle="Create custom data collection forms" loading={loading} actions={<ActionBtn label="Create Form" onClick={() => setShowCreate(true)} icon={<Plus size={11} />} />}>
+      {showCreate && (
+        <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16 }}>
+          <FormField label="Form Title" value={formName} onChange={setFormName} placeholder="e.g. Student Health Survey" required />
+          <FormField label="Audience" type="select" value={audience} onChange={setAudience} options={['all', 'students', 'staff', 'parents', 'teachers'].map(v => ({ value: v, label: v }))} />
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>FORM FIELDS</label>
+            {fields.map((field, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                <input value={field.label} onChange={e => updateField(i, 'label', e.target.value)} placeholder="Field label" style={{ flex: 2, background: '#0F0F1A', border: '1px solid #222230', borderRadius: 6, padding: '6px 10px', color: '#E2E8F0', fontSize: 12, outline: 'none' }} />
+                <select value={field.type} onChange={e => updateField(i, 'type', e.target.value)} style={{ flex: 1, background: '#0F0F1A', border: '1px solid #222230', borderRadius: 6, padding: '6px', color: '#E2E8F0', fontSize: 12, outline: 'none' }}>
+                  {['text', 'number', 'date', 'select', 'textarea'].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <ActionBtn label="+ Add Field" variant="secondary" onClick={addField} />
+            <ActionBtn label="Save Form" onClick={save} />
+            <ActionBtn label="Cancel" variant="secondary" onClick={() => setShowCreate(false)} />
+          </div>
+        </div>
+      )}
+      <DataTable title={`Forms (${forms.length})`} headers={['Title', 'Audience', 'Fields', 'Created']}
+        rows={forms.map(f => [f.title, f.audience, f.fields?.length || 0, f.created_at?.slice(0, 10)])}
+        emptyMsg="No forms created yet"
+      />
+    </ToolPage>
+  );
+}
+
+export function PayrollPreparer() {
+  const { currentUser } = useUser();
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+
+  useEffect(() => {
+    fetch(`${API}/staff/`, { headers: h(currentUser) }).then(r => r.json())
+      .then(r => { if (r.success) setStaff(r.data || []); }).finally(() => setLoading(false));
+  }, []);
+
+  // Note: salary is owner-only field, admins see 0
+  const isOwner = currentUser.role === 'owner';
+
+  return (
+    <ToolPage title="Payroll Data Preparer" subtitle={isOwner ? "Staff payroll overview" : "Access restricted to Owner"} loading={loading}>
+      {!isOwner ? (
+        <div style={{ padding: 32, textAlign: 'center', color: '#64748B', background: '#161622', border: '1px solid #222230', borderRadius: 11 }}>
+          Payroll data is accessible to Owner only.
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center' }}>
+            <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ background: '#161622', border: '1px solid #222230', borderRadius: 7, padding: '8px 12px', color: '#E2E8F0', fontSize: 12, outline: 'none' }} />
+            <a href={`${process.env.REACT_APP_BACKEND_URL}/api/export/staff`} download target="_blank" rel="noreferrer">
+              <ActionBtn label="Export Staff List (CSV)" variant="secondary" />
+            </a>
+          </div>
+          <DataTable headers={['Name', 'Type', 'Employee ID', 'Dept']}
+            rows={staff.map(s => [s.name, s.staff_type, s.employee_id || 'N/A', s.department || 'N/A'])}
+            emptyMsg="No staff data"
+          />
+          <div style={{ marginTop: 12, padding: '10px 14px', background: '#161622', border: '1px solid #222230', borderRadius: 8, fontSize: 11, color: '#64748B' }}>
+            Full payroll processing (salary slips, deductions, PF) coming in Phase 3. Export staff data for external payroll processing.
+          </div>
+        </>
+      )}
+    </ToolPage>
+  );
+}

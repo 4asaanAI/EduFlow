@@ -603,9 +603,49 @@ async def tool_get_financial_report(params: dict, user: dict) -> dict:
     }
 
 
+async def tool_get_daily_brief(params: dict, user: dict) -> dict:
+    """Comprehensive daily brief combining school pulse, alerts, and fee summary."""
+    db = get_db()
+    today = date.today().strftime("%Y-%m-%d")
+    day_name = date.today().strftime("%A, %d %B %Y")
+
+    # Get core data in parallel-style sequence
+    pulse = await tool_get_school_pulse({}, user)
+    alerts = await tool_get_smart_alerts({}, user)
+    fee = await tool_get_fee_summary({}, user)
+
+    # Upcoming events/announcements
+    upcoming = await db.announcements.find({"is_draft": False}, {"_id": 0, "title": 1, "created_at": 1}).sort("created_at", -1).to_list(3)
+
+    return {
+        "date": day_name,
+        "greeting": f"Good morning! Here's your daily brief for {day_name}.",
+        "attendance": {
+            "rate": pulse.get("summary", {}).get("attendance_rate", "Not marked"),
+            "present": pulse.get("summary", {}).get("present_today", 0),
+            "absent": pulse.get("summary", {}).get("absent_today", 0),
+            "staff_absent": pulse.get("staff_absent_today", []),
+        },
+        "leaves": {
+            "pending_count": pulse.get("summary", {}).get("pending_leaves", 0),
+            "requests": pulse.get("pending_leave_requests", [])[:3],
+        },
+        "fees": {
+            "collected": fee.get("stats", {}).get("total_collected", "N/A"),
+            "overdue": fee.get("stats", {}).get("total_overdue", "N/A"),
+            "collection_rate": fee.get("stats", {}).get("collection_rate", "N/A"),
+            "top_defaulters": fee.get("defaulters", [])[:3],
+        },
+        "alerts": alerts.get("alerts", [])[:5],
+        "chronic_absent_students": pulse.get("chronic_absent_students", []),
+        "announcements": [a["title"] for a in upcoming],
+    }
+
+
 # Tool registry
 TOOL_REGISTRY = {
     "get_school_pulse": {"fn": tool_get_school_pulse, "roles": ["owner", "admin"]},
+    "get_daily_brief": {"fn": tool_get_daily_brief, "roles": ["owner", "admin"]},
     "get_fee_summary": {"fn": tool_get_fee_summary, "roles": ["owner", "admin"]},
     "get_staff_status": {"fn": tool_get_staff_status, "roles": ["owner", "admin"]},
     "get_attendance_overview": {"fn": tool_get_attendance_overview, "roles": ["owner", "admin", "teacher"]},

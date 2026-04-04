@@ -452,7 +452,80 @@ export function LessonPlanGenerator() {
 }
 
 // 8-12: Remaining Teacher Tools
-export function WorksheetCreator() { return <ComingSoon toolName="Worksheet & Handout Creator" />; }
+export function WorksheetCreator() {
+  const { currentUser } = useUser();
+  const [worksheets, setWorksheets] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ subject_id: '', topic: '', type: 'practice', content: '' });
+  const [showForm, setShowForm] = useState(false);
+  const f = k => v => setForm(p => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/academics/subjects`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setSubjects(r.data || []); }),
+      fetch(`${API}/academics/worksheets`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setWorksheets(r.data || []); }).catch(() => {}),
+    ]).finally(() => setLoading(false));
+  }, []);
+
+  const save = async (e) => {
+    e.preventDefault();
+    await fetch(`${API}/academics/worksheets`, { method: 'POST', headers: h(currentUser), body: JSON.stringify(form) }).catch(() => {});
+    setShowForm(false);
+    const r = await fetch(`${API}/academics/worksheets`, { headers: h(currentUser) }).then(r => r.json()).catch(() => ({ success: false }));
+    if (r.success) setWorksheets(r.data || []);
+  };
+
+  return (
+    <ToolPage title="Worksheet Creator" subtitle="Create practice sheets for students" loading={loading}
+      actions={<ActionBtn label="New Worksheet" onClick={() => setShowForm(true)} icon={<Plus size={11} />} />}>
+      {showForm && (
+        <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 20, marginBottom: 16 }}>
+          <form onSubmit={save}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <FormField label="Subject" type="select" value={form.subject_id} onChange={f('subject_id')} options={subjects.map(s => ({ value: s.id, label: s.name }))} />
+              <FormField label="Type" type="select" value={form.type} onChange={f('type')} options={['practice', 'revision', 'homework'].map(v => ({ value: v, label: v }))} />
+              <FormField label="Topic" value={form.topic} onChange={f('topic')} placeholder="Chapter/topic name" required />
+            </div>
+            <FormField label="Content / Questions" type="textarea" value={form.content} onChange={f('content')} placeholder="Write questions or worksheet content..." />
+            <div style={{ display: 'flex', gap: 8 }}><ActionBtn label="Save Worksheet" /><ActionBtn label="Cancel" variant="secondary" onClick={() => setShowForm(false)} /></div>
+          </form>
+        </div>
+      )}
+      <DataTable title={`Worksheets (${worksheets.length})`} headers={['Topic', 'Subject', 'Type', 'Created']}
+        rows={worksheets.map(w => [w.topic, subjects.find(s => s.id === w.subject_id)?.name || 'N/A', w.type, w.created_at?.slice(0, 10)])}
+        emptyMsg="No worksheets created yet"
+      />
+    </ToolPage>
+  );
+}
+
+export function SubstitutionViewer() {
+  const { currentUser } = useUser();
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch timetable changes / substitutions
+    fetch(`${API}/academics/substitutions?user_id=${currentUser.id}`, { headers: h(currentUser) })
+      .then(r => r.json()).then(r => { if (r.success) setSubs(r.data || []); })
+      .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <ToolPage title="Substitution Viewer" subtitle="View your schedule changes" loading={loading}>
+      {subs.length === 0 ? (
+        <div style={{ padding: 32, textAlign: 'center', color: '#64748B', background: '#161622', border: '1px solid #222230', borderRadius: 11, fontSize: 13 }}>
+          No substitution assignments for today. Check back later.
+        </div>
+      ) : (
+        <DataTable headers={['Date', 'Period', 'Original Teacher', 'Class', 'Subject']}
+          rows={subs.map(s => [s.date, s.period_number, s.original_teacher, s.class_name, s.subject_name])}
+        />
+      )}
+    </ToolPage>
+  );
+}
 export function ClassPerformanceAnalytics() {
   const { currentUser } = useUser();
   const [results, setResults] = useState([]);
@@ -472,7 +545,6 @@ export function ClassPerformanceAnalytics() {
     </ToolPage>
   );
 }
-export function SubstitutionViewer() { return <ComingSoon toolName="Substitution Viewer" />; }
 export function PtmNotes() {
   const { currentUser } = useUser();
   const [notes, setNotes] = useState([]);

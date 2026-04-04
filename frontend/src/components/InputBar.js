@@ -54,7 +54,7 @@ function getHeaders(user) {
   return { 'X-User-Role': user?.role || 'owner', 'X-User-Id': user?.id || 'user-owner-001', 'X-User-Name': user?.name || 'Aman' };
 }
 
-export default function InputBar({ onSend, disabled }) {
+export default function InputBar({ onSend, disabled, isDark = true }) {
   const { currentUser } = useUser();
   const [text, setText] = useState('');
   const [showSlash, setShowSlash] = useState(false);
@@ -194,33 +194,29 @@ export default function InputBar({ onSend, disabled }) {
     return parts;
   };
 
+  const inputBg = isDark ? '#1C1C28' : '#FFFFFF';
+  const inputBorder = isDark ? '#222230' : '#E2E8F0';
+  const inputColor = isDark ? '#E2E8F0' : '#0F172A';
+  const inputPlaceholder = isDark ? '#475569' : '#94A3B8';
+  const dropdownBg = isDark ? '#1C1C28' : '#FFFFFF';
+  const dropdownBorder = isDark ? '#222230' : '#E2E8F0';
+  const gradBg = isDark ? '#0A0A0F' : '#F8F9FC';
+  const footerColor = isDark ? '#374151' : '#94A3B8';
+
   const showList = showSlash ? slashFiltered : showAt ? atResults : [];
 
   return (
-    <div data-testid="input-bar" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, #0A0A0F 70%, transparent)', padding: '28px 24px 20px', zIndex: 40 }}>
+    <div data-testid="input-bar" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: `linear-gradient(to top, ${gradBg} 70%, transparent)`, padding: '28px 24px 20px', zIndex: 40 }}>
       <div style={{ maxWidth: 820, margin: '0 auto', position: 'relative' }}>
-
-        {/* Dropdown list */}
         {showList.length > 0 && (
-          <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: '#1C1C28', border: '1px solid #222230', borderRadius: 10, marginBottom: 6, maxHeight: 280, overflowY: 'auto', boxShadow: '0 -8px 32px rgba(0,0,0,0.4)' }}>
-            {showSlash && (
-              <div style={{ padding: '6px 14px 4px', fontSize: 9, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '1px solid #1A1A24' }}>
-                Tools for {currentUser.role}
-              </div>
-            )}
-            {showAt && (
-              <div style={{ padding: '6px 14px 4px', fontSize: 9, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '1px solid #1A1A24' }}>
-                Mention a person
-              </div>
-            )}
+          <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: dropdownBg, border: `1px solid ${dropdownBorder}`, borderRadius: 10, marginBottom: 6, maxHeight: 280, overflowY: 'auto', boxShadow: '0 -8px 32px rgba(0,0,0,0.3)' }}>
+            {showSlash && <div style={{ padding: '6px 14px 4px', fontSize: 9, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `1px solid ${dropdownBorder}` }}>Tools for {currentUser.role}</div>}
+            {showAt && <div style={{ padding: '6px 14px 4px', fontSize: 9, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `1px solid ${dropdownBorder}` }}>Mention a person</div>}
             {showList.map((item, i) => (
-              <button
-                key={item.id || item.name || i}
-                data-testid={`suggestion-${item.id || i}`}
+              <button key={item.id || item.name || i} data-testid={`suggestion-${item.id || i}`}
                 onMouseDown={e => { e.preventDefault(); if (showSlash) insertSlashTool(item); else insertAtMention(item); }}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: i === selectedIdx ? 'rgba(99,102,241,0.15)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s' }}
-                onMouseEnter={() => setSelectedIdx(i)}
-              >
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: i === selectedIdx ? (isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)') : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                onMouseEnter={() => setSelectedIdx(i)}>
                 {showSlash ? (
                   <>
                     <code style={{ fontSize: 12, color: '#818CF8', fontFamily: 'JetBrains Mono, monospace', minWidth: 120 }}>/{item.label}</code>
@@ -228,10 +224,9 @@ export default function InputBar({ onSend, disabled }) {
                   </>
                 ) : (
                   <>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#3B82F620', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#60A5FA' }}>
-                      {(item.name || '?')[0]}
-                    </div>
-                    <span style={{ fontSize: 12, color: '#E2E8F0', fontWeight: 500 }}>{item.name}</span>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#3B82F620', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#60A5FA' }}>{(item.name || '?')[0]}</div>
+                    <span style={{ fontSize: 12, color: inputColor, fontWeight: 500 }}>{item.name}</span>
+                    <span style={{ fontSize: 10, color: '#64748B' }}>{item.sub_role || item.role}</span>
                     <span style={{ fontSize: 10, color: '#64748B', marginLeft: 'auto' }}>{item.role}</span>
                   </>
                 )}
@@ -240,33 +235,20 @@ export default function InputBar({ onSend, disabled }) {
           </div>
         )}
 
-        {/* Input box */}
-        <div style={{ background: '#1C1C28', border: `1px solid ${disabled ? '#1A1A24' : '#222230'}`, borderRadius: 14, display: 'flex', alignItems: 'flex-end', padding: '10px 12px', gap: 8 }}>
-          <textarea
-            ref={textareaRef}
-            data-testid="chat-input"
-            value={text}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
+        <div style={{ background: inputBg, border: `1px solid ${disabled ? (isDark ? '#1A1A24' : '#F1F5F9') : inputBorder}`, borderRadius: 14, display: 'flex', alignItems: 'flex-end', padding: '10px 12px', gap: 8 }}>
+          <textarea ref={textareaRef} data-testid="chat-input" value={text} onChange={handleChange} onKeyDown={handleKeyDown}
             placeholder={disabled ? 'EduFlow AI is thinking...' : 'Describe what you need, type / for tools or @ to mention...'}
-            disabled={disabled}
-            rows={1}
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: disabled ? '#475569' : '#E2E8F0', fontSize: 13, resize: 'none', lineHeight: 1.5, padding: 0, fontFamily: 'Manrope, sans-serif', maxHeight: 160, overflowY: 'auto' }}
+            disabled={disabled} rows={1}
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: disabled ? '#475569' : inputColor, fontSize: 13, resize: 'none', lineHeight: 1.5, padding: 0, fontFamily: 'Manrope, sans-serif', maxHeight: 160, overflowY: 'auto' }}
           />
-          <button
-            data-testid="send-btn"
-            onClick={handleSend}
-            disabled={disabled || !text.trim()}
-            style={{ width: 32, height: 32, borderRadius: 8, background: disabled || !text.trim() ? '#1A1A24' : '#3B82F6', border: 'none', cursor: disabled || !text.trim() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
-          >
-            <Send size={13} color={disabled || !text.trim() ? '#374151' : '#fff'} />
+          <button data-testid="send-btn" onClick={handleSend} disabled={disabled || !text.trim()}
+            style={{ width: 32, height: 32, borderRadius: 8, background: disabled || !text.trim() ? (isDark ? '#1A1A24' : '#E2E8F0') : '#3B82F6', border: 'none', cursor: disabled || !text.trim() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}>
+            <Send size={13} color={disabled || !text.trim() ? '#64748B' : '#fff'} />
           </button>
         </div>
-
-        {/* Footer hint */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 6, color: '#374151', fontSize: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Slash size={8} color="#374151" /> tool search</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><AtSign size={8} color="#374151" /> mentions</span>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 6, color: footerColor, fontSize: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Slash size={8} color={footerColor} /> tool search</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><AtSign size={8} color={footerColor} /> mentions</span>
           <span>EduFlow AI can make mistakes. Please double-check responses</span>
         </div>
       </div>

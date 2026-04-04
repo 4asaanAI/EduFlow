@@ -1,6 +1,3 @@
-/**
- * All 16 Owner Tools
- */
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import { executeTool, updateLeave, getStaff } from '../../lib/api';
@@ -386,7 +383,7 @@ export function StaffPerformance() {
   );
 }
 
-// 11. AI Health Report
+// 11. Health Report (renamed from AI Health Report)
 export function AiHealthReport() {
   const { currentUser } = useUser();
   const [loading, setLoading] = useState(false);
@@ -527,8 +524,136 @@ export function ComplaintTracker() {
   );
 }
 
-// 15. Custom Report Builder (skeleton)
-export function CustomReportBuilder() { return <ComingSoon toolName="Custom Report Builder" />; }
+// 15. Custom Report Builder
+export function CustomReportBuilder() {
+  const { currentUser } = useUser();
+  const [sources, setSources] = useState([]);
+  const [selectedSources, setSelectedSources] = useState([]);
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-// 16. Board/Trust Meeting Report (skeleton)
-export function BoardReport() { return <ComingSoon toolName="Board/Trust Meeting Report" />; }
+  const dataSources = [
+    { id: 'students', label: 'Student Data', icon: '👥' },
+    { id: 'attendance', label: 'Attendance Records', icon: '📋' },
+    { id: 'fee_transactions', label: 'Fee Transactions', icon: '₹' },
+    { id: 'staff', label: 'Staff Information', icon: '👨‍🏫' },
+    { id: 'expenses', label: 'Expenses', icon: '💰' },
+    { id: 'exam_results', label: 'Exam Results', icon: '📊' },
+    { id: 'enquiries', label: 'Admission Enquiries', icon: '📝' },
+  ];
+
+  const toggle = (id) => setSelectedSources(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+
+  const generateReport = async () => {
+    if (selectedSources.length === 0) return;
+    setLoading(true);
+    // Generate download links for selected sources
+    const links = selectedSources.map(src => {
+      let url = `${process.env.REACT_APP_BACKEND_URL}/api/export/${src.replace('_', '-')}`;
+      if (dateRange.start) url += `?start_date=${dateRange.start}`;
+      if (dateRange.end) url += `${dateRange.start ? '&' : '?'}end_date=${dateRange.end}`;
+      return { source: src, url, label: dataSources.find(d => d.id === src)?.label };
+    });
+    setReport({ links, generated: new Date().toLocaleString('en-IN') });
+    setLoading(false);
+  };
+
+  return (
+    <ToolPage title="Custom Report Builder" subtitle="Select data sources and download reports">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 900 }}>
+        <div>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Select Data Sources</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {dataSources.map(src => (
+              <label key={src.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: selectedSources.includes(src.id) ? 'rgba(59,130,246,0.1)' : '#161622', border: `1px solid ${selectedSources.includes(src.id) ? '#3B82F6' : '#222230'}`, borderRadius: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={selectedSources.includes(src.id)} onChange={() => toggle(src.id)} />
+                <span style={{ fontSize: 18 }}>{src.icon}</span>
+                <span style={{ fontSize: 13, color: '#E2E8F0' }}>{src.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Date Range (Optional)</h3>
+          <FormField label="From Date" type="date" value={dateRange.start} onChange={v => setDateRange(p => ({ ...p, start: v }))} />
+          <FormField label="To Date" type="date" value={dateRange.end} onChange={v => setDateRange(p => ({ ...p, end: v }))} />
+          <ActionBtn label={loading ? 'Preparing...' : `Generate ${selectedSources.length} Report(s)`} onClick={generateReport} disabled={loading || selectedSources.length === 0} />
+
+          {report && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: '#10B981', marginBottom: 10 }}>Reports ready — click to download:</div>
+              {report.links.map((link, i) => (
+                <a key={i} href={link.url} download target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#161622', border: '1px solid #10B981', borderRadius: 7, color: '#10B981', fontSize: 12, marginBottom: 6, textDecoration: 'none' }}>
+                  ⬇️ {link.label} (CSV)
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </ToolPage>
+  );
+}
+
+// 16. Board/Trust Meeting Report
+export function BoardReport() {
+  const { currentUser } = useUser();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const generate = async () => {
+    setLoading(true);
+    try {
+      const [pulse, fee, smart] = await Promise.all([
+        executeTool('get_school_pulse', {}, currentUser),
+        executeTool('get_fee_summary', {}, currentUser),
+        executeTool('get_smart_alerts', {}, currentUser),
+      ]);
+      setData({
+        generated: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
+        pulse: pulse.data,
+        fee: fee.data,
+        alerts: smart.data,
+      });
+    } catch {}
+    setLoading(false);
+  };
+
+  const s = data?.pulse?.summary || {};
+  return (
+    <ToolPage title="Board / Trust Meeting Report" subtitle="Consolidated school metrics for trust meetings">
+      {!data ? (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', fontSize: 16, marginBottom: 8 }}>Board Meeting Report</h3>
+          <p style={{ color: '#64748B', fontSize: 12, marginBottom: 20 }}>Generate a comprehensive report combining all school metrics suitable for board/trust meetings</p>
+          <ActionBtn label={loading ? 'Generating...' : 'Generate Report'} onClick={generate} disabled={loading} />
+        </div>
+      ) : (
+        <div>
+          <div style={{ marginBottom: 16, color: '#64748B', fontSize: 12 }}>Generated: {data.generated}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+            <StatCard value={s.total_students || 0} label="ENROLLED STUDENTS" color="#3B82F6" />
+            <StatCard value={s.attendance_rate || 'N/A'} label="ATTENDANCE RATE" color="#10B981" />
+            <StatCard value={data.fee?.stats?.collection_rate || 'N/A'} label="FEE COLLECTION" color="#10B981" />
+            <StatCard value={data.alerts?.critical_count || 0} label="CRITICAL ALERTS" color="#EF4444" />
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <StatCard value={data.fee?.stats?.total_collected || '₹0'} label="TOTAL COLLECTED" color="#10B981" />
+            <StatCard value={data.fee?.stats?.total_overdue || '₹0'} label="TOTAL OVERDUE" color="#EF4444" />
+            <StatCard value={s.total_staff || 0} label="TOTAL STAFF" color="#E2E8F0" />
+          </div>
+          {data.alerts?.alerts?.length > 0 && (
+            <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 11, padding: 16, marginBottom: 14 }}>
+              <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#EF4444', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Active Alerts ({data.alerts.total_alerts})</h3>
+              {data.alerts.alerts.map((a, i) => <div key={i} style={{ fontSize: 12, color: '#94A3B8', marginBottom: 4 }}>• {a.text}</div>)}
+            </div>
+          )}
+          <ActionBtn label="Re-generate" variant="secondary" onClick={generate} disabled={loading} />
+        </div>
+      )}
+    </ToolPage>
+  );
+}

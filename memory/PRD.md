@@ -1,4 +1,4 @@
-# EduFlow — PRD v1.2.0
+# EduFlow — PRD v1.3.0
 **Last Updated:** April 2026 | School: The Aaryans, CBSE, Lucknow, UP
 
 ## Architecture
@@ -8,84 +8,63 @@
 - LLM: OpenAI GPT-4o (Emergent key) + Gemini 2.5 Flash fallback
 - URL: https://classroom-ai-hub-4.preview.emergentagent.com
 
-## Session 1 (Phase 1 Foundation)
-- Full chat-first UI, SSE streaming, 5 core tools, 52 students seed data
+## School Org Context (The Aaryans)
+Head (Aman/Owner) → Principal (Adeen Sir) → 4 Depts:
+1. Accounts
+2. Admin (Medical, Reception, Admission, Day-to-Day: Peon/Aaya/Sweeper/Guard/Gardner)
+3. Transport (Head + 4-5 Drivers + Conductors)  
+4. Teachers: KG (Nursery/LKG/UKG: Incharge→Class Teacher) | 1-12: HOD→Coordinators(4-5,6-8,9-12)→Teachers/Class Teachers | Subjects: Eng/Hindi/Maths/Science/SSt/Sports/Music/Arts/Library/Computers
 
-## Session 2 (Full Tool Suite)
-- All 56 tools built across 4 roles
-- Dark/light mode, Profile, Settings modals, Conversation context menu
-- Backend: /api/academics, /api/ops routes
+## Session 3 (Comprehensive Iteration)
 
-## Session 3 (Bug Fixes + Enhancements)
-**Critical Bug Fixes:**
-- Double reply fixed (ref-based final message pattern, avoids React Strict Mode double-fire)
-- First user message now stays visible (justCreated ref skips message reload on new conv)
-- Leave Application crash fixed (uses /api/staff/leaves/my endpoint)
-- Lesson Plan not saving fixed (proper loading + saving with reload)
-- Study Planner saves to MongoDB (/api/ops/study-plan endpoint)
-- Attendance date parameter passed correctly to backend
-- Fee payment filters working (useEffect on filter change)
-- Certificate Generator properly generates and shows preview
+### P0 Fixes
+- Theme fix: ChatInterface, InputBar, MessageRenderer all use isDark from useTheme() — no more hardcoded dark colors. HTML-generated markdown uses theme-aware colors.
+- Search results clickable: tools → open-tool event, students → student-database, staff → staff-tracker, announcements → announcement-broadcaster
+- Notifications clickable: each notification routes to relevant tool
+- Slash `/` and `@` work mid-sentence anywhere in input, not just at start
+- Slash shows ALL role-specific tools in scrollable list with keyboard nav
+- @ mentions enriched with sub_role (class name for students, dept/subject for staff)
+- Backend: slash-prefixed keywords added to KEYWORD_TOOL_MAP (e.g. /school-pulse, /fee-collection, etc.)
+- Data persistence: settings save to DB, study planner saves to DB
 
-**UX Improvements:**
-- Sidebar restructured: Chat history on top, Tools (N) collapsible dropdown below
-- Header: compact role display (name + role tag stacked), no theme toggle in header
-- / and @ work mid-sentence anywhere in input text
-- / shows role-specific tool list (scrollable, keyboard nav)
-- @ fetches persons from DB (role-scoped)
-- Working notifications panel (real data from DB)
-- Working search panel (tools, students, staff, announcements)
-- Token usage metric in Profile modal
+### P1 Features
+- Daily Brief: typing "daily brief" / "morning summary" / "aaj ka haal" triggers comprehensive summary
+- All ComingSoon tools replaced: CustomReportBuilder (CSV download links), BoardReport (real metrics), WorksheetCreator (save/load), SubstitutionViewer, PracticeTest (AI-generated MCQ quiz), CareerGuidance (LLM with student context), PayrollPreparer (owner-only), CustomFormBuilder (create+save), AutomatedReport (schedule config)
+- File Upload: POST /api/uploads with drag-drop, preview, delete, role-based type restrictions (students: pdf/images only)
+- Export: CSV exports for students, fees, attendance, staff, expenses, enquiries, exam results via /api/export/*
+- Timetable: seeded with Class 9-A data (15 slots Mon-Wed)
+- School org context injected into every AI prompt
+- Rename "AI Health Report" → "Health Report"
+- Settings notifications save to MongoDB with Save button
+- Custom forms backend: GET/POST /api/settings/forms
+
+### P2 Items
 - Emergent watermark hidden via CSS
-- School Health Score widget on chat welcome (owner/admin)
-- "E" logo removed from chat (replaced with "AI" avatar)
-- Remove conversation starters (only greeting + health score)
-- Settings notifications toggles working with Save button
-- Conversation title shown below header when chat is open
+- Mobile search bar: search button triggers panel (desktop shows inline bar)
+- Backend routes: /api/search (enriched with sub_role), /api/notifications (role-scoped), /api/exports/*, /api/uploads, /api/academics/worksheets
 
-**New Backend Routes:**
-- /api/search - role-scoped global search
-- /api/notifications - role-scoped notification list
-- /api/staff/leaves/my - teacher's own leave history
-- /api/ops/study-plan (GET/POST) - student study planner persistence
-- /api/ops/leaves - fixed to work for teacher role without crashing
+## What Still Needs Building
+### Next Session P0
+- Light theme: ToolPage.js (tool panels) still has hardcoded dark colors — needs useTheme integration
+- WhatsApp/Twilio integration
+- Token usage API (MongoDB collection, count per user/month)
 
-**Seed Data Added:**
-- 6 expense records (utilities, maintenance, stationery, events, transport, salary)
-- 6 asset records (smart boards, lab equipment, library books, computers, desks)
-- 3 complaint records
+### P1
+- CRUD: Edit/Delete buttons on all tools (currently Create+Read only for most)
+- School Pulse threshold: slider value save to school_settings + flag classes below threshold
+- Better timetable UI: multi-class view, conflict detection
+- Reports: charts with recharts (attendance trend line, fee bar chart)
+- Profile modal: wire to token_usage MongoDB collection
 
-## Data Workflows
-- **Homework**: Teacher creates in Assignment Generator → `assignments` collection → displayed in Student Homework Viewer, AI Tutor (checks is_ai_blocked)
-- **My Attendance**: Marked by Teacher/Admin in Attendance Recorder → `student_attendance` → shown in Student Attendance Self-Check, Teacher Class View, Owner/Admin Attendance Overview
-- **My Result**: Teacher enters in Report Card Builder → `exam_results` → Student Result Viewer, Teacher Student Performance Viewer, Class Analytics
-- **My Fees**: Admin records in Fee Tracker → `fee_transactions` → Student Fee Status Viewer, Admin Fee Tracker, Owner Fee Collection Summary
-- **PTM Summary**: Teacher creates in PTM Notes → `ptm_notes` → Student PTM Summary Viewer (read-only)
-- **Report Card**: Marks in `exam_results` → Report Card Builder (teacher), Student Result Viewer
-
-## Prioritized Backlog
-
-### P0 — Next Session
-- [ ] File upload system (PDF, images, DOCX)
-- [ ] Light theme refinement in tool components
-- [ ] Recharts integration for better analytics/charts
-- [ ] Add evaluation metrics/charts to Class Performance Analytics
-
-### P1 — Phase 2
-- [ ] JWT phone OTP authentication
-- [ ] WhatsApp/Twilio integration (absence alerts, fee reminders)
-- [ ] PDF generation (certificates, report cards, question papers)
-- [ ] Assignment PDF export
-
-### P2 — Phase 3
-- [ ] AI Tutor NCERT curriculum integration
-- [ ] Smart Alerts background jobs
-- [ ] Payroll preparer, custom form builder full implementation
-- [ ] Data export ZIP for owner
+### P2
+- JWT phone OTP authentication
+- Student/Admin transfer workflow
+- ID card generator (HTML print template)
+- Parent message composer (WhatsApp queue)
 
 ## Environment Variables
 MONGO_URL, DB_NAME, CORS_ORIGINS (protected)
 EMERGENT_LLM_KEY=sk-emergent-cF2E90dFaB30fBe29B
 LLM_PROVIDER=openai, LLM_MODEL=gpt-4o
 LLM_FALLBACK_PROVIDER=gemini, LLM_FALLBACK_MODEL=gemini-2.5-flash
-SCHOOL_NAME=The Aaryans, SCHOOL_BOARD=CBSE, SCHOOL_CITY=Lucknow
+SCHOOL_NAME=The Aaryans, SCHOOL_BOARD=CBSE, SCHOOL_CITY=Lucknow, SCHOOL_STATE=Uttar Pradesh

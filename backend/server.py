@@ -20,6 +20,8 @@ from routes.academics import router as academics_router
 from routes.operations import router as operations_router
 from routes.search import router as search_router
 from routes.notifications import router as notifications_router
+from routes.exports import router as exports_router
+from routes.upload import router as upload_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -45,6 +47,8 @@ app.include_router(academics_router)
 app.include_router(operations_router)
 app.include_router(search_router)
 app.include_router(notifications_router)
+app.include_router(exports_router)
+app.include_router(upload_router)
 
 
 @app.on_event("startup")

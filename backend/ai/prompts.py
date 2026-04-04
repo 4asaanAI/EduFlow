@@ -5,6 +5,19 @@ SCHOOL_NAME = os.environ.get("SCHOOL_NAME", "The Aaryans")
 SCHOOL_BOARD = os.environ.get("SCHOOL_BOARD", "CBSE")
 SCHOOL_CITY = os.environ.get("SCHOOL_CITY", "Lucknow")
 
+# School org structure context (The Aaryans specific)
+ORG_CONTEXT = """
+School Organization — The Aaryans (CBSE, Lucknow):
+Hierarchy: Head (Aman/Owner) → Principal (Adeen Sir) → 4 Departments:
+1. Accounts — fee collection, payroll, financial records
+2. Admin — Medical, Reception, Admission, Day-to-Day (Peon, Aaya, Sweeper, Guard, Gardner)
+3. Transport — Head + 4-5 Drivers + Conductors
+4. Teachers:
+   - Kindergarten (Nursery/LKG/UKG): Incharge → Class Teacher
+   - Classes 1-12: HOD → Coordinators (4-5, 6-8, 9-12) → Subject Teachers/Class Teachers
+   Subjects: English, Hindi, Maths, Science, Social Studies, Sports, Music, Arts, Library, Computers
+"""
+
 
 TOOLS_BY_ROLE = {
     "owner": [
@@ -106,6 +119,8 @@ ROLE RULES:
     prompt = f"""You are EduFlow AI, the intelligent school management assistant for {SCHOOL_NAME} ({SCHOOL_BOARD} board, {SCHOOL_CITY}).
 Today: {today}
 User: {name} (Role: {role})
+
+{ORG_CONTEXT}
 
 {lang_instruction}
 {context_str}
