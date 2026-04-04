@@ -38,10 +38,12 @@ async def get_fee_transactions(request: Request, student_id: str = None, status:
         query["status"] = status
 
     txns = await db.fee_transactions.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
-    # Enrich with student names
+    # Batch student lookups (fix N+1)
+    s_ids = list(set(t["student_id"] for t in txns if t.get("student_id")))
+    students = await db.students.find({"id": {"$in": s_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(s_ids)) if s_ids else []
+    s_map = {s["id"]: s["name"] for s in students}
     for t in txns:
-        student = await db.students.find_one({"id": t["student_id"]}, {"_id": 0})
-        t["student_name"] = student["name"] if student else "Unknown"
+        t["student_name"] = s_map.get(t["student_id"], "Unknown")
     return {"success": True, "data": txns}
 
 

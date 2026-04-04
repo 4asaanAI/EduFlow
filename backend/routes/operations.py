@@ -254,6 +254,57 @@ async def save_study_plan(request: Request):
     return {"success": True}
 
 
+@router.patch("/expenses/{expense_id}")
+async def update_expense(expense_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+    body = await request.json(); body.pop("id", None)
+    await db.expenses.update_one({"id": expense_id}, {"$set": body})
+    return {"success": True}
+
+
+@router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+    await db.expenses.delete_one({"id": expense_id})
+    return {"success": True}
+
+
+@router.delete("/assets/{asset_id}")
+async def delete_asset(asset_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["admin", "owner"]:
+        raise HTTPException(403, "Forbidden")
+    await db.assets.delete_one({"id": asset_id})
+    return {"success": True}
+
+
+@router.delete("/announcements/{ann_id}")
+async def delete_announcement(ann_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["admin", "owner"]:
+        raise HTTPException(403, "Forbidden")
+    await db.announcements.delete_one({"id": ann_id})
+    return {"success": True}
+
+
+@router.delete("/visitors/{visitor_id}")
+async def delete_visitor(visitor_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["admin", "owner"]:
+        raise HTTPException(403, "Forbidden")
+    await db.visitor_log.delete_one({"id": visitor_id})
+    return {"success": True}
+
+
 # --- Announcements ---
 @router.get("/announcements")
 async def list_announcements(request: Request):

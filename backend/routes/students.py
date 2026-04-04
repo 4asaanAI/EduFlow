@@ -36,10 +36,12 @@ async def list_students(request: Request, class_id: str = None, search: str = No
     students = await db.students.find(query, {"_id": 0}).skip(skip).limit(per_page).to_list(per_page)
     total = await db.students.count_documents(query)
 
-    # Enrich with class info
+    # Batch class lookups (fix N+1)
+    class_ids = list(set(s.get("class_id") for s in students if s.get("class_id")))
+    classes = await db.classes.find({"id": {"$in": class_ids}}, {"_id": 0}).to_list(len(class_ids)) if class_ids else []
+    class_map = {c["id"]: {"name": c["name"], "section": c["section"]} for c in classes}
     for s in students:
-        cls = await db.classes.find_one({"id": s.get("class_id")}, {"_id": 0})
-        s["class_info"] = {"name": cls["name"], "section": cls["section"]} if cls else None
+        s["class_info"] = class_map.get(s.get("class_id"))
 
     return {"success": True, "data": students, "meta": {"page": page, "total": total, "per_page": per_page}}
 
@@ -108,11 +110,21 @@ async def update_student(student_id: str, request: Request):
     user = get_user(request)
     if user["role"] not in ["owner", "admin"]:
         raise HTTPException(403, "Forbidden")
-
     body = await request.json()
     body["updated_at"] = datetime.now().isoformat()
     body.pop("id", None)
     await db.students.update_one({"id": student_id}, {"$set": body})
+    return {"success": True}
+
+
+@router.delete("/{student_id}")
+async def delete_student(student_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+    # Soft delete
+    await db.students.update_one({"id": student_id}, {"$set": {"is_active": False, "status": "withdrawn", "withdrawal_date": datetime.now().strftime("%Y-%m-%d")}})
     return {"success": True}
 
 

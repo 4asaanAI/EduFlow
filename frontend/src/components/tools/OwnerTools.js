@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import { executeTool, updateLeave, getStaff } from '../../lib/api';
-import { ToolPage, StatCard, DataTable, Badge, ComingSoon, FormField, ActionBtn, useToolData } from './ToolPage';
+import { ToolPage, StatCard, DataTable, Badge, ComingSoon, FormField, ActionBtn, useToolData, LineChartWidget, BarChartWidget, PieChartWidget } from './ToolPage';
 import { Activity, CheckCircle, XCircle, AlertTriangle, Plus, RefreshCw, Save, TrendingUp, Users, FileText, Send } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -53,7 +53,12 @@ export function SchoolPulse() {
             </div>
             <input type="range" min={50} max={100} value={threshold} onChange={e => setThreshold(+e.target.value)} data-testid="threshold-slider" style={{ width: '100%', accentColor: '#3B82F6' }} />
           </div>
-          <button data-testid="save-settings-btn" style={{ width: '100%', marginTop: 12, background: '#3B82F6', border: 'none', borderRadius: 8, padding: '10px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Save Settings</button>
+          <button data-testid="save-settings-btn" onClick={async () => {
+            await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings/school`, {
+              method: 'PATCH', headers: h(currentUser), body: JSON.stringify({ attendance_threshold: threshold })
+            });
+            alert(`Attendance threshold saved as ${threshold}%`);
+          }} style={{ width: '100%', marginTop: 12, background: '#3B82F6', border: 'none', borderRadius: 8, padding: '10px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Save Settings</button>
         </div>
 
         {/* Snapshot */}
@@ -97,23 +102,30 @@ export function SchoolPulse() {
   );
 }
 
-// 2. Fee Collection Summary
+// 2. Fee Collection Summary — with bar chart
 export function FeeCollection() {
   const { currentUser } = useUser();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { load(); }, []);
-  const load = async () => { setLoading(true); try { const r = await executeTool('get_fee_summary', {}, currentUser); if (r.success) setData(r.data); } catch {} setLoading(false); };
+  useEffect(() => { loadData(); }, []);
+  const loadData = async () => { setLoading(true); try { const r = await executeTool('get_fee_summary', {}, currentUser); if (r.success) setData(r.data); } catch {} setLoading(false); };
   const stats = data?.stats || {};
   const defaulters = data?.defaulters || [];
+
+  // Bar chart data: top defaulters
+  const chartData = defaulters.slice(0, 6).map(d => ({ name: d.student_name.split(' ')[0], amount: d.amount_overdue }));
+
   return (
-    <ToolPage title="Fee collection" subtitle="Revenue summary & defaulters" onRefresh={load} loading={loading}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20, maxWidth: 900 }}>
+    <ToolPage title="Fee collection" subtitle="Revenue summary & defaulters" onRefresh={loadData} loading={loading}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 18, maxWidth: 900 }}>
         <StatCard value={stats.total_overdue || '₹0'} label="TOTAL OVERDUE" color="#EF4444" />
         <StatCard value={stats.students_with_dues || 0} label="STUDENTS WITH DUES" color="#F59E0B" />
         <StatCard value={stats.overdue_60_days || 0} label="OVERDUE 60+ DAYS" color="#EF4444" />
         <StatCard value={stats.collection_rate || '0%'} label="COLLECTION RATE" color="#10B981" />
       </div>
+      {chartData.length > 0 && (
+        <BarChartWidget data={chartData} xKey="name" bars={[{ key: 'amount', color: '#EF4444', name: 'Overdue (₹)' }]} title="Top Defaulters — Amount Overdue" height={200} />
+      )}
       <DataTable title={`Fee Defaulters — Top ${defaulters.length}`} headers={['Student', 'Class', 'Amount Overdue', 'Days Overdue']}
         rows={defaulters.map(d => [d.student_name, d.class, <span style={{ color: '#EF4444', fontWeight: 600 }}>{d.amount_overdue_fmt}</span>, <span style={{ color: d.days_overdue > 60 ? '#EF4444' : '#F59E0B' }}>{d.days_overdue} days</span>])}
         emptyMsg="No fee defaulters — great collection rate!"
@@ -154,26 +166,29 @@ export function StudentStrength() {
   );
 }
 
-// 4. Attendance Overview (Owner)
+// 4. Attendance Overview (Owner) - with recharts
 export function AttendanceOverview() {
   const { currentUser } = useUser();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => { load(); }, []);
   const load = async () => { setLoading(true); try { const r = await executeTool('get_attendance_overview', { days: 30 }, currentUser); if (r.success) setData(r.data); } catch {} setLoading(false); };
+
+  const chartData = (data?.daily_trend || []).map(d => ({ date: d.date?.slice(5), rate: d.rate, present: d.present, absent: d.absent }));
+
   return (
     <ToolPage title="Attendance Overview" subtitle="Trends and class-wise analysis" onRefresh={load} loading={loading}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20, maxWidth: 500 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16, maxWidth: 500 }}>
         <StatCard value={data?.avg_attendance_rate || '0%'} label="AVG RATE (30 DAYS)" color="#10B981" />
         <StatCard value={data?.total_records || 0} label="TOTAL RECORDS" color="#3B82F6" />
-        <StatCard value={data?.period || 'N/A'} label="PERIOD" color="#8B5CF6" />
+        <StatCard value="Last 30 days" label="PERIOD" color="#8B5CF6" />
       </div>
-      <DataTable title="Class-wise Attendance Today" headers={['Class', 'Present', 'Total', 'Rate']}
-        rows={(data?.class_stats_today || []).map(c => [c.class, c.present, c.total, <span style={{ color: parseFloat(c.rate) >= 85 ? '#10B981' : '#EF4444' }}>{c.rate}</span>])}
+      {chartData.length > 0 && (
+        <LineChartWidget data={chartData} xKey="date" lines={[{ key: 'rate', color: '#10B981', name: 'Attendance %' }, { key: 'absent', color: '#EF4444', name: 'Absent' }]} title="7-Day Attendance Trend" height={200} />
+      )}
+      <DataTable title="Class-wise Today" headers={['Class', 'Present', 'Total', 'Rate']}
+        rows={(data?.class_stats_today || []).map(c => [c.class, c.present, c.total, <span style={{ color: parseFloat(c.rate) >= 85 ? '#10B981' : '#EF4444', fontWeight: 600 }}>{c.rate}</span>])}
         emptyMsg="Attendance not yet marked for today"
-      />
-      <DataTable title="Last 7 Days Trend" headers={['Date', 'Present', 'Absent', 'Rate']}
-        rows={(data?.daily_trend || []).map(d => [d.date, d.present, d.absent, `${d.rate}%`])}
       />
     </ToolPage>
   );
@@ -654,6 +669,68 @@ export function BoardReport() {
           <ActionBtn label="Re-generate" variant="secondary" onClick={generate} disabled={loading} />
         </div>
       )}
+    </ToolPage>
+  );
+}
+
+
+// Year-end Session Transition Tool (accessible from Settings / Owner tools)
+export function YearEndTransition() {
+  const { currentUser } = useUser();
+  const [newYear, setNewYear] = useState('2026-27');
+  const [startDate, setStartDate] = useState('2026-04-01');
+  const [endDate, setEndDate] = useState('2027-03-31');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const handleTransition = async () => {
+    if (!confirmed) { setConfirmed(true); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings/year-end-transition`, {
+        method: 'POST', headers: h(currentUser),
+        body: JSON.stringify({ new_year_name: newYear, start_date: startDate, end_date: endDate })
+      }).then(r => r.json());
+      if (r.success) setResult(r.data);
+    } catch {}
+    setLoading(false);
+    setConfirmed(false);
+  };
+
+  return (
+    <ToolPage title="Year-end Session Transition" subtitle="Transition to a new academic year">
+      <div style={{ maxWidth: 520 }}>
+        {!result ? (
+          <>
+            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: '#FCD34D' }}>
+              ⚠️ This will archive the current academic year (2025-26) and create a new one. All existing students and data are preserved.
+            </div>
+            <FormField label="New Academic Year Name" value={newYear} onChange={setNewYear} placeholder="e.g. 2026-27" required />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <FormField label="Start Date" type="date" value={startDate} onChange={setStartDate} />
+              <FormField label="End Date" type="date" value={endDate} onChange={setEndDate} />
+            </div>
+            {confirmed && (
+              <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#FCA5A5' }}>
+                Are you absolutely sure? Click again to confirm. This cannot be undone.
+              </div>
+            )}
+            <ActionBtn label={confirmed ? 'Confirm Transition' : 'Start Year Transition'} onClick={handleTransition} disabled={loading} variant={confirmed ? 'danger' : 'primary'} />
+            {confirmed && <ActionBtn label="Cancel" variant="secondary" onClick={() => setConfirmed(false)} />}
+          </>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🎓</div>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#10B981', fontSize: 16, marginBottom: 8 }}>Year Transition Complete!</h3>
+            <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 16 }}>{result.message}</p>
+            <div style={{ background: '#161622', border: '1px solid #222230', borderRadius: 8, padding: '12px 16px', textAlign: 'left' }}>
+              <div style={{ fontSize: 12, color: '#E2E8F0' }}><b>New Year:</b> {result.new_year?.name}</div>
+              <div style={{ fontSize: 12, color: '#E2E8F0', marginTop: 4 }}><b>Students Carried Forward:</b> {result.students_carried_forward}</div>
+            </div>
+          </div>
+        )}
+      </div>
     </ToolPage>
   );
 }

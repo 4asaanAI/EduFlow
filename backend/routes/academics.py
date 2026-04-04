@@ -173,6 +173,84 @@ async def list_lesson_plans(request: Request):
     return {"success": True, "data": plans}
 
 
+@router.post("/question-papers/generate")
+async def generate_question_paper(request: Request):
+    """Use LLM to generate a question paper."""
+    from ai.llm_client import llm_client
+    user = get_user(request)
+    if user["role"] not in ["teacher", "admin", "owner"]:
+        raise HTTPException(403, "Forbidden")
+    body = await request.json()
+    subject = body.get("subject", "Mathematics")
+    chapters = body.get("chapters", "all chapters")
+    total_marks = body.get("total_marks", 100)
+    easy_pct = body.get("easy", 30)
+    medium_pct = body.get("medium", 50)
+    hard_pct = body.get("hard", 20)
+    exam_type = body.get("exam_type", "Unit Test")
+    board = "CBSE"
+
+    prompt = f"""Generate a complete {board} {exam_type} question paper for {subject}.
+Topics/Chapters: {chapters}
+Total Marks: {total_marks}
+Difficulty: Easy {easy_pct}%, Medium {medium_pct}%, Hard {hard_pct}%
+
+Format the paper with:
+- Section A: Multiple Choice Questions (1 mark each)
+- Section B: Short Answer Questions (2-3 marks each)  
+- Section C: Long Answer Questions (5-6 marks each)
+
+Include time duration, general instructions, and clear question numbering.
+Make questions appropriate for Classes 9-12 CBSE standard."""
+
+    import uuid
+    session_id = f"qp-{uuid.uuid4()}"
+    try:
+        paper_text = await llm_client.chat(
+            "You are an expert CBSE question paper setter. Generate well-structured, academically accurate question papers.",
+            [{"role": "user", "content": prompt}],
+            session_id
+        )
+        # Save to DB
+        db = get_db()
+        subj = await db.subjects.find_one({"name": {"$regex": subject, "$options": "i"}}, {"_id": 0})
+        qp = {
+            "id": str(uuid.uuid4()),
+            "teacher_id": user["id"],
+            "subject_id": subj["id"] if subj else None,
+            "title": f"{subject} - {exam_type}",
+            "chapters": [chapters] if isinstance(chapters, str) else chapters,
+            "difficulty_mix": {"easy": easy_pct, "medium": medium_pct, "hard": hard_pct},
+            "generated_content": paper_text,
+            "total_marks": total_marks,
+            "created_at": datetime.now().isoformat(),
+        }
+        await db.question_papers.insert_one({**qp, "_id": qp["id"]})
+        return {"success": True, "data": {"content": paper_text, "id": qp["id"]}}
+    except Exception as e:
+        raise HTTPException(500, f"Generation failed: {str(e)}")
+
+
+@router.get("/question-papers")
+async def list_question_papers(request: Request):
+    db = get_db()
+    user = get_user(request)
+    query = {}
+    if user["role"] == "teacher":
+        query["teacher_id"] = user["id"]
+    papers = await db.question_papers.find(query, {"_id": 0, "generated_content": 0}).sort("created_at", -1).to_list(20)
+    return {"success": True, "data": papers}
+
+
+@router.get("/question-papers/{paper_id}")
+async def get_question_paper(paper_id: str, request: Request):
+    db = get_db()
+    paper = await db.question_papers.find_one({"id": paper_id}, {"_id": 0})
+    if not paper:
+        raise HTTPException(404, "Not found")
+    return {"success": True, "data": paper}
+
+
 # --- Subjects ---
 @router.get("/subjects")
 async def list_subjects(request: Request, class_id: str = None):

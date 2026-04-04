@@ -55,10 +55,11 @@ async def get_pending_leaves(request: Request):
         raise HTTPException(403, "Forbidden")
 
     leaves = await db.leave_requests.find({"status": "pending"}, {"_id": 0}).to_list(50)
-    enriched = []
-    for lr in leaves:
-        staff = await db.staff.find_one({"id": lr["staff_id"]}, {"_id": 0, "salary": 0})
-        enriched.append({**lr, "staff": staff})
+    # Batch staff lookups (fix N+1)
+    s_ids = list(set(lr["staff_id"] for lr in leaves if lr.get("staff_id")))
+    staff_list = await db.staff.find({"id": {"$in": s_ids}}, {"_id": 0, "salary": 0}).to_list(len(s_ids)) if s_ids else []
+    staff_map = {s["id"]: s for s in staff_list}
+    enriched = [{**lr, "staff": staff_map.get(lr["staff_id"])} for lr in leaves]
     return {"success": True, "data": enriched}
 
 

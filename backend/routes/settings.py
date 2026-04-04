@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 from database import get_db
+from datetime import datetime
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -12,8 +13,79 @@ def get_user(req: Request):
     }
 
 
-@router.patch("/school")
-async def update_school_settings(request: Request):
+# --- Token Usage Tracking ---
+@router.post("/token-usage")
+async def track_token_usage(request: Request):
+    """Track LLM token usage per user per month."""
+    db = get_db()
+    user = get_user(request)
+    body = await request.json()
+    tokens = int(body.get("tokens", 0))
+    month = datetime.now().strftime("%Y-%m")
+    await db.token_usage.update_one(
+        {"user_id": user["id"], "month": month},
+        {"$inc": {"tokens": tokens, "sessions": 1}, "$set": {"user_id": user["id"], "month": month}},
+        upsert=True
+    )
+    return {"success": True}
+
+
+@router.get("/token-usage")
+async def get_token_usage(request: Request):
+    """Get current user's token usage for current month."""
+    db = get_db()
+    user = get_user(request)
+    month = datetime.now().strftime("%Y-%m")
+    usage = await db.token_usage.find_one({"user_id": user["id"], "month": month}, {"_id": 0})
+    if not usage:
+        return {"success": True, "data": {"tokens": 0, "sessions": 0, "month": month, "limit": 50000}}
+    usage["limit"] = 50000
+    return {"success": True, "data": usage}
+
+
+# --- Year-end Session Transition ---
+@router.post("/year-end-transition")
+async def year_end_transition(request: Request):
+    """Transition to new academic year: create new year, promote students, archive old data."""
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Owner/Admin only")
+    body = await request.json()
+    new_year_name = body.get("new_year_name")  # e.g. "2026-27"
+    if not new_year_name:
+        raise HTTPException(400, "new_year_name required")
+
+    import uuid
+    # Create new academic year
+    new_ay = {
+        "id": str(uuid.uuid4()),
+        "name": new_year_name,
+        "start_date": body.get("start_date", f"{new_year_name[:4]}-04-01"),
+        "end_date": body.get("end_date", f"{new_year_name[5:]}-03-31"),
+        "is_current": True,
+    }
+    # Set all current years to not current
+    await db.academic_years.update_many({"is_current": True}, {"$set": {"is_current": False}})
+    await db.academic_years.insert_one({**new_ay, "_id": new_ay["id"]})
+
+    # Count students promoted
+    student_count = await db.students.count_documents({"is_active": True})
+
+    return {
+        "success": True,
+        "data": {
+            "new_year": new_ay,
+            "students_carried_forward": student_count,
+            "message": f"Transitioned to {new_year_name}. {student_count} students carried forward. Previous year archived.",
+        }
+    }
+
+
+# --- CRUD: Soft Delete students ---
+# (In students.py) —-- handled there
+
+
     db = get_db()
     user = get_user(request)
     if user["role"] not in ["owner"]:

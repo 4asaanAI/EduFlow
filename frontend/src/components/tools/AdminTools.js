@@ -1,7 +1,7 @@
 /**
  * All 19 Admin Tools
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import { getStudents, createStudent, getAllClasses, getTodayAttendance, bulkMarkAttendance, getFeeTransactions, recordFeePayment, getPendingLeaves, updateLeave } from '../../lib/api';
 import { ToolPage, StatCard, DataTable, Badge, ComingSoon, FormField, ActionBtn } from './ToolPage';
@@ -438,7 +438,72 @@ export function EnquiryRegister() {
 }
 
 // 7-19: Remaining Admin Tools (some skeleton, some functional)
-export function DocumentScanner() { return <ComingSoon toolName="Document Scanner & Extractor (Phase 2)" />; }
+export function DocumentScanner() {
+  const { currentUser } = useUser();
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [studentId, setStudentId] = useState('');
+  const [students, setStudents] = useState([]);
+  const [docType, setDocType] = useState('aadhar');
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState(null);
+  const inputRef = React.useRef(null);
+
+  useEffect(() => {
+    fetch(`${API}/students/`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setStudents(r.data || []); });
+  }, []);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!studentId) { alert('Please select a student first'); return; }
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('entity_type', 'students');
+    formData.append('entity_id', studentId);
+    try {
+      const res = await fetch(`${API}/uploads`, {
+        method: 'POST',
+        headers: { 'X-User-Role': currentUser.role, 'X-User-Id': currentUser.id, 'X-User-Name': currentUser.name },
+        body: formData,
+      }).then(r => r.json());
+      if (res.success) {
+        setResult({ ...res.data, doc_type: docType });
+        setFiles(prev => [...prev, res.data]);
+        // Update student documents
+        await fetch(`${API}/students/${studentId}`, { method: 'PATCH', headers: h(currentUser), body: JSON.stringify({ [`documents.${docType}`]: res.data.file_url }) });
+      }
+    } catch {}
+    setUploading(false);
+  };
+
+  return (
+    <ToolPage title="Document Scanner & Extractor" subtitle="Upload and file student/staff documents">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 900 }}>
+        <div>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: '#E2E8F0', marginBottom: 14 }}>Upload Document</h3>
+          <FormField label="Student" type="select" value={studentId} onChange={setStudentId} options={students.map(s => ({ value: s.id, label: s.name }))} required />
+          <FormField label="Document Type" type="select" value={docType} onChange={setDocType} options={[{ value: 'aadhar', label: 'Aadhar Card' }, { value: 'birth_cert', label: 'Birth Certificate' }, { value: 'tc', label: 'Transfer Certificate' }, { value: 'photo', label: 'Student Photo' }, { value: 'other', label: 'Other' }]} />
+          <input type="file" ref={inputRef} style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png,.heic" onChange={handleUpload} />
+          <ActionBtn label={uploading ? 'Uploading...' : 'Upload Document'} onClick={() => inputRef.current?.click()} disabled={uploading || !studentId} />
+          {result && <div style={{ marginTop: 12, padding: 12, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, fontSize: 12, color: '#10B981' }}>Uploaded: {result.file_name}</div>}
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: '#E2E8F0', marginBottom: 14 }}>Recent Uploads</h3>
+          {files.length === 0 ? <p style={{ color: '#64748B', fontSize: 12 }}>No documents uploaded yet in this session.</p> : (
+            files.map((f, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#E2E8F0' }}>{f.file_name}</span>
+                <span style={{ fontSize: 10, color: '#64748B' }}>{f.file_size_kb}KB</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </ToolPage>
+  );
+}
 export function SmartFeeDefaulter() {
   const { currentUser } = useUser();
   const [data, setData] = useState(null);
@@ -477,9 +542,217 @@ function AdmissionFunnelAdmin() {
     </ToolPage>
   );
 }
-export function ParentMessage() { return <ComingSoon toolName="Parent Message Composer (WhatsApp - Phase 2)" />; }
-export function StudentTransfer() { return <ComingSoon toolName="Student Transfer / Withdrawal" />; }
-export function IdCardGenerator() { return <ComingSoon toolName="ID Card Generator (Phase 2)" />; }
+export function ParentMessage() {
+  const { currentUser } = useUser();
+  const [students, setStudents] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [log, setLog] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API}/students/`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setStudents(r.data || []); });
+  }, []);
+
+  const handleSend = async () => {
+    if (!message.trim() || selectedStudents.length === 0) return;
+    setSending(true);
+    // Save as notification log entries
+    for (const sid of selectedStudents) {
+      const student = students.find(s => s.id === sid);
+      await fetch(`${API}/ops/announcements`, {
+        method: 'POST', headers: h(currentUser),
+        body: JSON.stringify({ title: 'Parent Message', content: message, audience_type: 'custom', is_draft: false })
+      });
+    }
+    setLog(prev => [...prev, { message, count: selectedStudents.length, time: new Date().toLocaleTimeString() }]);
+    setSent(true); setMessage(''); setSelectedStudents([]);
+    setTimeout(() => setSent(false), 3000);
+    setSending(false);
+  };
+
+  return (
+    <ToolPage title="Parent Message Composer" subtitle="Send messages to parents/guardians">
+      <div style={{ maxWidth: 600 }}>
+        <div style={{ background: '#161622', border: '1px solid #fbbf2430', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 11, color: '#F59E0B' }}>
+          WhatsApp delivery requires Twilio setup (Phase 3). Messages are currently logged in the system.
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>SELECT RECIPIENTS</label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+            {['all', 'class-9a', 'class-10a'].map(g => (
+              <button key={g} onClick={() => { if (g === 'all') setSelectedStudents(students.map(s => s.id)); }}
+                style={{ background: '#161622', border: '1px solid #222230', borderRadius: 6, padding: '5px 10px', color: '#94A3B8', fontSize: 11, cursor: 'pointer' }}>
+                {g === 'all' ? 'All Students' : g}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: '#64748B' }}>{selectedStudents.length} recipients selected</p>
+        </div>
+        <FormField label="Message" type="textarea" value={message} onChange={setMessage} placeholder="Type your message to parents... (e.g., PTM scheduled for Friday at 10 AM)" />
+        <ActionBtn label={sent ? 'Sent!' : sending ? 'Sending...' : `Send to ${selectedStudents.length} Parents`} onClick={handleSend} disabled={sending || !message.trim() || selectedStudents.length === 0} />
+        {log.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 13, color: '#E2E8F0', marginBottom: 8 }}>Message Log</h4>
+            {log.map((l, i) => <div key={i} style={{ fontSize: 11, color: '#64748B', marginBottom: 4 }}>{l.time} — Sent to {l.count} parents</div>)}
+          </div>
+        )}
+      </div>
+    </ToolPage>
+  );
+}
+
+export function StudentTransfer() {
+  const { currentUser } = useUser();
+  const [students, setStudents] = useState([]);
+  const [search, setSearch] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const searchStudents = async () => {
+    if (!search.trim()) return;
+    const r = await fetch(`${API}/students/?search=${encodeURIComponent(search)}`, { headers: h(currentUser) }).then(r => r.json());
+    if (r.success) setStudents(r.data || []);
+  };
+
+  const handleTransfer = async () => {
+    if (!selectedStudent || !reason) return;
+    setLoading(true);
+    await fetch(`${API}/students/${selectedStudent.id}`, {
+      method: 'PATCH', headers: h(currentUser),
+      body: JSON.stringify({ status: 'transferred', is_active: false, withdrawal_reason: reason, withdrawal_date: new Date().toISOString().slice(0, 10) })
+    });
+    // Generate TC
+    await fetch(`${API}/ops/certificates`, {
+      method: 'POST', headers: h(currentUser),
+      body: JSON.stringify({ student_id: selectedStudent.id, cert_type: 'transfer', content_data: { student_name: selectedStudent.name, reason, transfer_date: new Date().toISOString().slice(0, 10) } })
+    });
+    setDone(true); setLoading(false);
+  };
+
+  return (
+    <ToolPage title="Student Transfer / Withdrawal" subtitle="Process student transfers and generate TC">
+      <div style={{ maxWidth: 600 }}>
+        {!done ? (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchStudents()} placeholder="Search student by name or admission no..." style={{ flex: 1, background: '#161622', border: '1px solid #222230', borderRadius: 7, padding: '8px 12px', color: '#E2E8F0', fontSize: 12, outline: 'none' }} />
+              <ActionBtn label="Search" onClick={searchStudents} />
+            </div>
+            {students.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                {students.map(s => (
+                  <div key={s.id} onClick={() => setSelectedStudent(s)} style={{ padding: '10px 14px', background: selectedStudent?.id === s.id ? 'rgba(59,130,246,0.1)' : '#161622', border: `1px solid ${selectedStudent?.id === s.id ? '#3B82F6' : '#222230'}`, borderRadius: 8, marginBottom: 6, cursor: 'pointer' }}>
+                    <div style={{ fontWeight: 600, color: '#E2E8F0', fontSize: 13 }}>{s.name}</div>
+                    <div style={{ fontSize: 11, color: '#64748B' }}>{s.class_info ? `${s.class_info.name}-${s.class_info.section}` : 'N/A'} · {s.admission_number}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedStudent && (
+              <>
+                <FormField label="Reason for Transfer/Withdrawal" type="textarea" value={reason} onChange={setReason} placeholder="e.g. Family relocation to Delhi" required />
+                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#FCA5A5' }}>
+                  This action will deactivate the student's account and auto-generate a Transfer Certificate.
+                </div>
+                <ActionBtn label={loading ? 'Processing...' : 'Process Transfer & Generate TC'} variant="danger" onClick={handleTransfer} disabled={loading || !reason} />
+              </>
+            )}
+          </>
+        ) : (
+          <div style={{ padding: 24, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', color: '#10B981', fontSize: 16 }}>Transfer Processed</h3>
+            <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>Student deactivated. Transfer Certificate generated and saved in Certificates section.</p>
+            <ActionBtn label="Process Another" variant="secondary" onClick={() => { setDone(false); setSelectedStudent(null); setStudents([]); setSearch(''); setReason(''); }} />
+          </div>
+        )}
+      </div>
+    </ToolPage>
+  );
+}
+
+export function IdCardGenerator() {
+  const { currentUser } = useUser();
+  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [filterClass, setFilterClass] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/students/`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setStudents(r.data || []); }),
+      fetch(`${API}/settings/classes`, { headers: h(currentUser) }).then(r => r.json()).then(r => { if (r.success) setClasses(r.data || []); })
+    ]).finally(() => setLoading(false));
+  }, []);
+
+  const toggleAll = () => {
+    const filtered = filterClass ? students.filter(s => s.class_id === filterClass) : students;
+    if (selectedIds.length === filtered.length) setSelectedIds([]);
+    else setSelectedIds(filtered.map(s => s.id));
+  };
+
+  const printCards = () => {
+    const selected = students.filter(s => selectedIds.includes(s.id));
+    const html = `
+      <html><head><title>ID Cards</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; }
+        .card { width: 85mm; height: 54mm; border: 2px solid #3B82F6; border-radius: 6px; padding: 10px; margin: 8px; display: inline-block; vertical-align: top; box-sizing: border-box; }
+        .school { font-weight: bold; font-size: 10px; color: #3B82F6; text-align: center; }
+        .name { font-size: 14px; font-weight: bold; margin: 6px 0 2px; }
+        .info { font-size: 10px; color: #666; }
+        @media print { @page { margin: 5mm; } }
+      </style></head>
+      <body>
+        ${selected.map(s => `
+          <div class="card">
+            <div class="school">THE AARYANS — CBSE, LUCKNOW</div>
+            <hr style="border:1px solid #3B82F6;margin:4px 0"/>
+            <div class="name">${s.name}</div>
+            <div class="info">Class: ${s.class_info ? `${s.class_info.name}-${s.class_info.section}` : 'N/A'}</div>
+            <div class="info">Adm No: ${s.admission_number || 'N/A'}</div>
+            <div class="info">Roll: ${s.roll_number || 'N/A'}</div>
+            <div class="info">AY: 2025-26</div>
+          </div>
+        `).join('')}
+      </body></html>
+    `;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+
+  const filtered = filterClass ? students.filter(s => s.class_id === filterClass) : students;
+
+  return (
+    <ToolPage title="ID Card Generator" subtitle="Generate printable student ID cards" loading={loading}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <select value={filterClass} onChange={e => setFilterClass(e.target.value)} style={{ background: '#161622', border: '1px solid #222230', borderRadius: 7, padding: '8px 12px', color: '#E2E8F0', fontSize: 12, outline: 'none' }}>
+          <option value="">All Classes</option>
+          {classes.map(c => <option key={c.id} value={c.id}>{c.name}-{c.section}</option>)}
+        </select>
+        <ActionBtn label={selectedIds.length === filtered.length ? 'Deselect All' : 'Select All'} variant="secondary" onClick={toggleAll} />
+        <ActionBtn label={`Print ${selectedIds.length} ID Cards`} onClick={printCards} disabled={selectedIds.length === 0} />
+      </div>
+      <DataTable headers={['', 'Name', 'Class', 'Adm No.', 'Roll']}
+        rows={filtered.map(s => [
+          <input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => setSelectedIds(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} />,
+          s.name,
+          s.class_info ? `${s.class_info.name}-${s.class_info.section}` : 'N/A',
+          s.admission_number || 'N/A',
+          s.roll_number || 'N/A'
+        ])}
+        emptyMsg="No students found"
+      />
+    </ToolPage>
+  );
+}
 export function TimetableBuilder() {
   const { currentUser } = useUser();
   const [classes, setClasses] = useState([]);
