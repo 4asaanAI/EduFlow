@@ -1,0 +1,68 @@
+from fastapi import APIRouter, Request, HTTPException
+from database import get_db
+from datetime import datetime
+
+router = APIRouter(prefix="/api/staff", tags=["staff"])
+
+
+def get_user(req: Request):
+    return {
+        "id": req.headers.get("X-User-Id", "user-owner-001"),
+        "role": req.headers.get("X-User-Role", "owner"),
+    }
+
+
+@router.get("/")
+async def list_staff(request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+
+    staff = await db.staff.find({"is_active": True}, {"_id": 0, "salary": 0}).to_list(100)
+    return {"success": True, "data": staff}
+
+
+@router.get("/{staff_id}/leave-requests")
+async def get_leave_requests(staff_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+
+    leaves = await db.leave_requests.find({"staff_id": staff_id}, {"_id": 0}).to_list(50)
+    return {"success": True, "data": leaves}
+
+
+@router.get("/leaves/pending")
+async def get_pending_leaves(request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+
+    leaves = await db.leave_requests.find({"status": "pending"}, {"_id": 0}).to_list(50)
+    enriched = []
+    for lr in leaves:
+        staff = await db.staff.find_one({"id": lr["staff_id"]}, {"_id": 0, "salary": 0})
+        enriched.append({**lr, "staff": staff})
+    return {"success": True, "data": enriched}
+
+
+@router.patch("/leaves/{leave_id}")
+async def update_leave(leave_id: str, request: Request):
+    db = get_db()
+    user = get_user(request)
+    if user["role"] not in ["owner", "admin"]:
+        raise HTTPException(403, "Forbidden")
+
+    body = await request.json()
+    update = {
+        "status": body.get("status"),
+        "approved_by": user["id"],
+        "approved_at": datetime.now().isoformat(),
+    }
+    if body.get("rejection_reason"):
+        update["rejection_reason"] = body["rejection_reason"]
+    await db.leave_requests.update_one({"id": leave_id}, {"$set": update})
+    return {"success": True}
