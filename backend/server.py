@@ -18,6 +18,8 @@ from routes.tools import router as tools_router
 from routes.settings import router as settings_router
 from routes.academics import router as academics_router
 from routes.operations import router as operations_router
+from routes.search import router as search_router
+from routes.notifications import router as notifications_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)

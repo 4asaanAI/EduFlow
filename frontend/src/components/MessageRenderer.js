@@ -248,13 +248,14 @@ export default function MessageRenderer({ message, isStreaming, onActionButton }
       data-testid="ai-message"
       style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'flex-start' }}
     >
-      {/* Avatar */}
+      {/* Avatar - simple AI indicator, no E logo */}
       <div style={{
         width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-        background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+        background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 13, color: '#818CF8',
-      }}>E</div>
+        fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 10, color: '#818CF8',
+        letterSpacing: '0.02em',
+      }}>AI</div>
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>

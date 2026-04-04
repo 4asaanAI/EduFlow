@@ -107,7 +107,7 @@ export function FeeTracker() {
 
   useEffect(() => { load(); getStudents(currentUser).then(r => { if (r.success) setStudents(r.data || []); }); }, []);
 
-  const load = async () => {
+  useEffect(() => { load(); }, [filter]);
 
   const load = async () => {
     setLoading(true);

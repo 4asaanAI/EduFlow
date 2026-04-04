@@ -100,3 +100,21 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
 @media (min-width: 769px) {
   .mobile-menu-btn { display: none !important; }
 }
+
+/* Hide Emergent watermark */
+a[href*="emergentagent"], a[href*="emergent.sh"],
+div[class*="emergent"], span[class*="emergent"],
+.emergent-badge, [data-emergent], iframe[src*="emergent"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+/* Also target the "Made with Emergent" bottom-right badge by position */
+body > div:last-child > a[target="_blank"]:last-child,
+body > div[style*="position: fixed"][style*="bottom"][style*="right"] {
+  display: none !important;
+}
